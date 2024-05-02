@@ -24,10 +24,13 @@ void LinearLayer::initStates() {
 
 void LinearLayer::initWeights() {
 	biases.resize(nOfOutputs);
+	biasesDiff.resize(nOfOutputs);
 
 	weights.resize(nOfInputs);
+	weightsDiff.resize(nOfInputs);
 	for (int i = 0; i < nOfInputs; i++) {
 		weights[i].resize(nOfOutputs);
+		weightsDiff[i].resize(nOfOutputs);
 		for (int j = 0; j < nOfOutputs; j++) {
 			double r = (double)rand() / (double)RAND_MAX;
 			r = r * (2.0 / (double)nOfInputs) - 1.0 / (double)nOfInputs;
@@ -55,6 +58,30 @@ void LinearLayer::forwardParallel(vector<vector<double>>& input, int batchStart,
 	}
 }
 
+void LinearLayer::backwardParallel(vector<vector<double>>& input, 
+	vector<vector<double>>& nextDiff, int batchStart, int batchEnd) {
+	for (int b = batchStart; b < batchEnd; b++) {
+		for (int out = 0; out < nOfOutputs; out++) {
+			biasesDiff[out] += nextDiff[b][out];
+		}
+		for (int in = 0; in < nOfInputs; in++) {
+			double val = 0;
+			for (int out = 0; out < nOfOutputs; out++) {
+				val += nextDiff[b][out] * weights[in][out];
+				weightsDiff[in][out] += nextDiff[b][out] * input[b][in];
+			}
+			diff[b][in] = val;
+		}
+	}
+}
+
+
+
+
+
+
+
+
 void LinearLayer::forward(vector<vector<double>>& input) {
 	int batchSize = input.size();
 	int size = batchSize / nOfThreads;
@@ -67,6 +94,26 @@ void LinearLayer::forward(vector<vector<double>>& input) {
 			right++;
 		}
 		thread t(&LinearLayer::forwardParallel, this, ref(input), left, right);
+		threads.push_back(move(t));
+		left = right;
+	}
+	for (int i = 0; i < threads.size(); i++) {
+		threads[i].join();
+	}
+}
+
+void LinearLayer::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
+	int batchSize = nextDiff.size();
+	int size = batchSize / nOfThreads;
+	int k = batchSize % nOfThreads;
+	vector<thread> threads;
+	int left = 0, right = 0;
+	for (int i = 0; i < nOfThreads; i++) {
+		right = left + size;
+		if (i < k) {
+			right++;
+		}
+		thread t(&LinearLayer::backwardParallel, this, ref(input), ref(nextDiff), left, right);
 		threads.push_back(move(t));
 		left = right;
 	}
