@@ -42,3 +42,35 @@ void LinearLayer::init() {
 	t1.join();
 	t2.join();
 }
+
+void LinearLayer::forwardParallel(vector<vector<double>>& input, int batchStart, int batchEnd) {
+	for (int b = batchStart; b < batchEnd; b++) {
+		for (int out = 0; out < nOfOutputs; out++) {
+			double val = biases[out];
+			for (int in = 0; in < nOfInputs; in++) {
+				val += input[b][in] * weights[in][out];
+			}
+			output[b][out] = val;
+		}
+	}
+}
+
+void LinearLayer::forward(vector<vector<double>>& input) {
+	int batchSize = input.size();
+	int size = batchSize / nOfThreads;
+	int k = batchSize % nOfThreads;
+	vector<thread> threads;
+	int left = 0, right = 0;
+	for (int i = 0; i < nOfThreads; i++) {
+		right = left + size;
+		if (i < k) {
+			right++;
+		}
+		thread t(&LinearLayer::forwardParallel, this, ref(input), left, right);
+		threads.push_back(move(t));
+		left = right;
+	}
+	for (int i = 0; i < threads.size(); i++) {
+		threads[i].join();
+	}
+}

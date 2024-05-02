@@ -2,7 +2,8 @@
 #include "layers.h"
 
 int main() {
-	LinearLayer layer(10, 10, 25, 4);
-
+	LinearLayer layer(2, 2, 2, 4);
+	vector<vector<double>> in = { {-1, 1}, {1, -1} };
+	layer.forward(in);
 	return 0;
 }

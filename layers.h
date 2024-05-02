@@ -23,7 +23,9 @@ private:
 	void init();
 	void initStates();
 	void initWeights();
+	void forwardParallel(vector<vector<double>>& input, int batchStart, int batchEnd);
 
 public:
 	LinearLayer(int inputs, int outputs, int batchSize, int threads);
+	void forward(vector<vector<double>>& input);
 };
