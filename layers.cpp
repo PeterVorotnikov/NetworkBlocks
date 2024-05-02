@@ -16,10 +16,9 @@ void LinearLayer::initStates() {
 	diff.resize(maxBatchSize);
 
 	for (int i = 0; i < maxBatchSize; i++) {
-		output.resize(nOfOutputs);
-		diff.resize(nOfInputs);
+		output[i].resize(nOfOutputs);
+		diff[i].resize(nOfInputs);
 	}
-	cout << "init states\n";
 }
 
 
@@ -35,7 +34,6 @@ void LinearLayer::initWeights() {
 			weights[i][j] = r;
 		}
 	}
-	cout << "init weights\n";
 }
 
 void LinearLayer::init() {
