@@ -4,6 +4,7 @@
 #include <vector>
 #include <random>
 #include <thread>
+#include <chrono>
 
 using namespace std;
 
@@ -20,8 +21,8 @@ public:
 
 private:
 	void init();
-	void initStates(int batchStart, int batchEnd);
-	void initWeights(int inputStart, int inputEnd);
+	void initStates();
+	void initWeights();
 
 public:
 	LinearLayer(int inputs, int outputs, int batchSize, int threads);
