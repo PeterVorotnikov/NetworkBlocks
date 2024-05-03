@@ -3,15 +3,13 @@
 #include <iostream>
 #include <vector>
 #include <random>
-#include <thread>
-#include <chrono>
 
 using namespace std;
 
 
 class LinearLayer {
 public:
-	int nOfInputs = 0, nOfOutputs = 0, maxBatchSize = 0, nOfThreads = 0;
+	int nOfInputs = 0, nOfOutputs = 0, maxBatchSize = 0;
 
 	vector<vector<double>> output;
 	vector<vector<double>> diff;
@@ -25,12 +23,10 @@ private:
 	void init();
 	void initStates();
 	void initWeights();
-	void forwardParallel(vector<vector<double>>& input, int batchStart, int batchEnd);
-	void backwardParallel(vector<vector<double>>& input, vector<vector<double>>& nextDiff,
-		int batchStart, int batchEnd);
 
 public:
-	LinearLayer(int inputs, int outputs, int batchSize, int threads);
+	LinearLayer(int inputs, int outputs, int batchSize);
 	void forward(vector<vector<double>>& input);
 	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+	void zeroGradients();
 };

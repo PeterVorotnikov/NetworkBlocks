@@ -2,11 +2,10 @@
 
 
 
-LinearLayer::LinearLayer(int inputs, int outputs, int batchSize, int threads) {
+LinearLayer::LinearLayer(int inputs, int outputs, int batchSize) {
 	nOfInputs = inputs;
 	nOfOutputs = outputs;
 	maxBatchSize = batchSize;
-	nOfThreads = threads;
 
 	init();
 }
@@ -40,14 +39,13 @@ void LinearLayer::initWeights() {
 }
 
 void LinearLayer::init() {
-	thread t1(&LinearLayer::initStates, this);
-	thread t2(&LinearLayer::initWeights, this);
-	t1.join();
-	t2.join();
+	initStates();
+	initWeights();
 }
 
-void LinearLayer::forwardParallel(vector<vector<double>>& input, int batchStart, int batchEnd) {
-	for (int b = batchStart; b < batchEnd; b++) {
+void LinearLayer::forward(vector<vector<double>>& input) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
 		for (int out = 0; out < nOfOutputs; out++) {
 			double val = biases[out];
 			for (int in = 0; in < nOfInputs; in++) {
@@ -58,9 +56,9 @@ void LinearLayer::forwardParallel(vector<vector<double>>& input, int batchStart,
 	}
 }
 
-void LinearLayer::backwardParallel(vector<vector<double>>& input, 
-	vector<vector<double>>& nextDiff, int batchStart, int batchEnd) {
-	for (int b = batchStart; b < batchEnd; b++) {
+void LinearLayer::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
+	int batchSize = nextDiff.size();
+	for (int b = 0; b < batchSize; b++) {
 		for (int out = 0; out < nOfOutputs; out++) {
 			biasesDiff[out] += nextDiff[b][out];
 		}
@@ -75,49 +73,11 @@ void LinearLayer::backwardParallel(vector<vector<double>>& input,
 	}
 }
 
-
-
-
-
-
-
-
-void LinearLayer::forward(vector<vector<double>>& input) {
-	int batchSize = input.size();
-	int size = batchSize / nOfThreads;
-	int k = batchSize % nOfThreads;
-	vector<thread> threads;
-	int left = 0, right = 0;
-	for (int i = 0; i < nOfThreads; i++) {
-		right = left + size;
-		if (i < k) {
-			right++;
+void LinearLayer::zeroGradients() {
+	for (int out = 0; out < nOfOutputs; out++) {
+		biasesDiff[out] = 0;
+		for (int in = 0; in < nOfInputs; in++) {
+			weightsDiff[in][out] = 0;
 		}
-		thread t(&LinearLayer::forwardParallel, this, ref(input), left, right);
-		threads.push_back(move(t));
-		left = right;
-	}
-	for (int i = 0; i < threads.size(); i++) {
-		threads[i].join();
-	}
-}
-
-void LinearLayer::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
-	int batchSize = nextDiff.size();
-	int size = batchSize / nOfThreads;
-	int k = batchSize % nOfThreads;
-	vector<thread> threads;
-	int left = 0, right = 0;
-	for (int i = 0; i < nOfThreads; i++) {
-		right = left + size;
-		if (i < k) {
-			right++;
-		}
-		thread t(&LinearLayer::backwardParallel, this, ref(input), ref(nextDiff), left, right);
-		threads.push_back(move(t));
-		left = right;
-	}
-	for (int i = 0; i < threads.size(); i++) {
-		threads[i].join();
 	}
 }
