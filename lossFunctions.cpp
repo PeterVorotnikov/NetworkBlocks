@@ -12,7 +12,7 @@ MSELoss::MSELoss(int outputs, int batchSize) {
 
 void MSELoss::calculate(vector<vector<double>>& output, vector<vector<double>>& target) {
 	value = 0;
-	int batchSize = output.size();
+	int batchSize = target.size();
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < nOfOutputs; i++) {
 			value += pow(target[b][i] - output[b][i], 2);
