@@ -32,19 +32,19 @@ public:
 	void zeroGradients();
 };
 
-class ReLU2d {
+class ReLU1d {
 public:
 	int d = 0, l = 0, maxBatchSize = 0;
 	vector<vector<double>> output;
 	vector<vector<double>> diff;
 
 public:
-	ReLU2d(int d, int batchSize, int l = 0);
+	ReLU1d(int d, int batchSize, int l = 0);
 	void forward(vector<vector<double>>& input);
 	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
 };
 
-class Sigmoid {
+class Sigmoid1d {
 public:
 	int d = 0, maxBatchSize = 0;
 	vector<vector<double>> output;
@@ -54,7 +54,21 @@ public:
 	}
 
 public:
-	Sigmoid(int d, int batchSize);
+	Sigmoid1d(int d, int batchSize);
 	void forward(vector<vector<double>>& input);
 	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+};
+
+
+class ReLU3d {
+public:
+	int d1 = 0, d2 = 0, d3 = 0, l = 0, maxBatchSize = 0;
+	vector<vector<vector<vector<double>>>> output;
+	vector<vector<vector<vector<double>>>> diff;
+
+public:
+	ReLU3d(int d1, int d2, int d3, int batchSize, int l = 0);
+	void forward(vector<vector<vector<vector<double>>>>& input);
+	void backward(vector<vector<vector<vector<double>>>>& input, 
+		vector<vector<vector<vector<double>>>>& nextDiff);
 };

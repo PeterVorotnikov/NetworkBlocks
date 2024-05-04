@@ -5,7 +5,7 @@
 
 int main() {
 	LinearLayer layer1(3, 3, 3);
-	ReLU2d activation(3, 3, 0.1);
+	ReLU1d activation(3, 3, 0.1);
 	LinearLayer layer2(3, 2, 3);
 	Adam1d biases1(3, 0.0003, 0.9, 0.99);
 	Adam2d weights1(3, 3, 0.0003, 0.9, 0.99);

@@ -86,7 +86,7 @@ void LinearLayer::zeroGradients() {
 
 
 
-ReLU2d::ReLU2d(int d, int batchSize, int l) {
+ReLU1d::ReLU1d(int d, int batchSize, int l) {
 	this->d = d;
 	maxBatchSize = batchSize;
 	this->l = l;
@@ -99,7 +99,7 @@ ReLU2d::ReLU2d(int d, int batchSize, int l) {
 	}
 }
 
-void ReLU2d::forward(vector<vector<double>>& input) {
+void ReLU1d::forward(vector<vector<double>>& input) {
 	int batchSize = input.size();
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
@@ -113,7 +113,7 @@ void ReLU2d::forward(vector<vector<double>>& input) {
 	}
 }
 
-void ReLU2d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
+void ReLU1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
 	int batchSize = nextDiff.size();
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
@@ -129,7 +129,7 @@ void ReLU2d::backward(vector<vector<double>>& input, vector<vector<double>>& nex
 
 
 
-Sigmoid::Sigmoid(int d, int batchSize) {
+Sigmoid1d::Sigmoid1d(int d, int batchSize) {
 	this->d = d;
 	maxBatchSize = batchSize;
 
@@ -141,7 +141,7 @@ Sigmoid::Sigmoid(int d, int batchSize) {
 	}
 }
 
-void Sigmoid::forward(vector<vector<double>>& input) {
+void Sigmoid1d::forward(vector<vector<double>>& input) {
 	int batchSize = input.size();
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
@@ -150,11 +150,71 @@ void Sigmoid::forward(vector<vector<double>>& input) {
 	}
 }
 
-void Sigmoid::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
+void Sigmoid1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
 	int batchSize = nextDiff.size();
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
 			diff[b][i] = nextDiff[b][i] * f(input[b][i]) * (1 - f(input[b][i]));
+		}
+	}
+}
+
+
+
+ReLU3d::ReLU3d(int d1, int d2, int d3, int batchSize, int l = 0) {
+	this->d1 = d1;
+	this->d2 = d2;
+	this->d3 = d3;
+	maxBatchSize = batchSize;
+	this->l = l;
+
+	output.resize(batchSize);
+	diff.resize(batchSize);
+	for (int b = 0; b < maxBatchSize; b++) {
+		output[b].resize(d1);
+		diff[b].resize(d1);
+		for (int i1 = 0; i1 < d1; i1++) {
+			output[b][i1].resize(d2);
+			diff[b][i1].resize(d2);
+			for (int i2 = 0; i2 < d2; i2++) {
+				output[b][i1][i2].resize(d3);
+				diff[b][i1][i2].resize(d3);
+			}
+		}
+	}
+}
+
+void ReLU3d::forward(vector<vector<vector<vector<double>>>>& input) {
+	for (int b = 0; b < maxBatchSize; b++) {
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					if (input[b][i1][i2][i3] >= 0) {
+						output[b][i1][i2][i3] = input[b][i1][i2][i3];
+					}
+					else {
+						output[b][i1][i2][i3] = l * input[b][i1][i2][i3];
+					}
+				}
+			}
+		}
+	}
+}
+
+void ReLU3d::backward(vector<vector<vector<vector<double>>>>& input,
+	vector<vector<vector<vector<double>>>>& nextDiff) {
+	for (int b = 0; b < maxBatchSize; b++) {
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					if (input[b][i1][i2][i3] >= 0) {
+						diff[b][i1][i2][i3] = nextDiff[b][i1][i2][i3];
+					}
+					else {
+						diff[b][i1][i2][i3] = l * nextDiff[b][i1][i2][i3];
+					}
+				}
+			}
 		}
 	}
 }
