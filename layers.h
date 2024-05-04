@@ -95,3 +95,19 @@ public:
 		vector<vector<vector<vector<double>>>>& nextDiff);
 	void zeroGradients();
 };
+
+
+
+class Flatten31 {
+public:
+	int d1 = 0, d2 = 0, d3 = 0, maxBatchSize = 0;
+	int outputSize = 0;
+	vector<vector<double>> output;
+	vector<vector<vector<vector<double>>>> diff;
+
+public:
+	Flatten31(int d1, int d2, int d3, int batchSize);
+	void forward(vector<vector<vector<vector<double>>>>& input);
+	void backward(vector<vector<vector<vector<double>>>>& input, 
+		vector<vector<double>>& nextDiff);
+};

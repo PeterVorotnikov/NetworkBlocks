@@ -318,7 +318,7 @@ void ConvolutionalLayer::backward(vector<vector<vector<vector<double>>>>& input,
 	for (int b = 0; b < batchSize; b++) {
 		for (int out = 0; out < outputChannels; out++) {
 			for (int r2 = 0; r2 < rows; r2++) {
-				for (int c2 = 0; c2 <= cols; c2++) {
+				for (int c2 = 0; c2 < cols; c2++) {
 					
 					biasesDiff[out] += nextDiff[b][out][r2][c2];
 					for (int in = 0; in < inputChannels; in++) {
@@ -332,7 +332,7 @@ void ConvolutionalLayer::backward(vector<vector<vector<vector<double>>>>& input,
 								diff[b][in][r1][c1] += nextDiff[b][out][r2][c2] *
 									weights[out][in][r][c];
 								weightsDiff[out][in][r][c] += nextDiff[b][out][r2][c2] *
-									input[b][in][r1][r2];
+									input[b][in][r1][c1];
 							}
 						}
 					}
@@ -350,6 +350,59 @@ void ConvolutionalLayer::zeroGradients() {
 			for (int r = 0; r < kernelSize; r++) {
 				for (int c = 0; c < kernelSize; c++) {
 					weightsDiff[out][in][r][c] = 0;
+				}
+			}
+		}
+	}
+}
+
+
+Flatten31::Flatten31(int d1, int d2, int d3, int batchSize) {
+	this->d1 = d1;
+	this->d2 = d2;
+	this->d3 = d3;
+	outputSize = d1 * d2 * d3;
+	maxBatchSize = batchSize;
+
+	output.resize(maxBatchSize);
+	diff.resize(maxBatchSize);
+	for (int b = 0; b < maxBatchSize; b++) {
+		output[b].resize(outputSize);
+		diff[b].resize(d1);
+		for (int i1 = 0; i1 < d1; i1++) {
+			diff[b][i1].resize(d2);
+			for (int i2 = 0; i2 < d2; i2++) {
+				diff[b][i1][i2].resize(d3);
+			}
+		}
+	}
+}
+
+void Flatten31::forward(vector<vector<vector<vector<double>>>>& input) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
+		int i = 0;
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					output[b][i] = input[b][i1][i2][i3];
+					i++;
+				}
+			}
+		}
+	}
+}
+
+void Flatten31::backward(vector<vector<vector<vector<double>>>>& input,
+	vector<vector<double>>& nextDiff) {
+	int batchSize = nextDiff.size();
+	for (int b = 0; b < batchSize; b++) {
+		int i = 0;
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					diff[b][i1][i2][i3] = nextDiff[b][i];
+					i++;
 				}
 			}
 		}
