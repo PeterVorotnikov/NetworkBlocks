@@ -117,7 +117,7 @@ void ReLU2d::backward(vector<vector<double>>& input, vector<vector<double>>& nex
 	int batchSize = nextDiff.size();
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
-			if (nextDiff[b][i] >= 0) {
+			if (input[b][i] >= 0) {
 				diff[b][i] = nextDiff[b][i];
 			}
 			else {
