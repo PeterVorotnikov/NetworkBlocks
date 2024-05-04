@@ -161,7 +161,7 @@ void Sigmoid1d::backward(vector<vector<double>>& input, vector<vector<double>>& 
 
 
 
-ReLU3d::ReLU3d(int d1, int d2, int d3, int batchSize, int l = 0) {
+ReLU3d::ReLU3d(int d1, int d2, int d3, int batchSize, int l) {
 	this->d1 = d1;
 	this->d2 = d2;
 	this->d3 = d3;
@@ -185,7 +185,8 @@ ReLU3d::ReLU3d(int d1, int d2, int d3, int batchSize, int l = 0) {
 }
 
 void ReLU3d::forward(vector<vector<vector<vector<double>>>>& input) {
-	for (int b = 0; b < maxBatchSize; b++) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
 		for (int i1 = 0; i1 < d1; i1++) {
 			for (int i2 = 0; i2 < d2; i2++) {
 				for (int i3 = 0; i3 < d3; i3++) {
@@ -203,7 +204,8 @@ void ReLU3d::forward(vector<vector<vector<vector<double>>>>& input) {
 
 void ReLU3d::backward(vector<vector<vector<vector<double>>>>& input,
 	vector<vector<vector<vector<double>>>>& nextDiff) {
-	for (int b = 0; b < maxBatchSize; b++) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
 		for (int i1 = 0; i1 < d1; i1++) {
 			for (int i2 = 0; i2 < d2; i2++) {
 				for (int i3 = 0; i3 < d3; i3++) {
@@ -213,6 +215,141 @@ void ReLU3d::backward(vector<vector<vector<vector<double>>>>& input,
 					else {
 						diff[b][i1][i2][i3] = l * nextDiff[b][i1][i2][i3];
 					}
+				}
+			}
+		}
+	}
+}
+
+
+
+ConvolutionalLayer::ConvolutionalLayer(int rows, int cols, int inputChannels, int outputChannels,
+	int batchSize, int kernelSize) {
+	this->rows = rows;
+	this->cols = cols;
+	this->inputChannels = inputChannels;
+	this->outputChannels = outputChannels;
+	maxBatchSize = batchSize;
+	this->kernelSize = kernelSize;
+
+	output.resize(maxBatchSize);
+	diff.resize(maxBatchSize);
+	for (int b = 0; b < batchSize; b++) {
+		output[b].resize(outputChannels);
+		for (int c = 0; c < outputChannels; c++) {
+			output[b][c].resize(rows);
+			for (int r = 0; r < rows; r++) {
+				output[b][c][r].resize(cols);
+			}
+		}
+		diff[b].resize(inputChannels);
+		for (int c = 0; c < inputChannels; c++) {
+			diff[b][c].resize(rows);
+			for (int r = 0; r < rows; r++) {
+				diff[b][c][r].resize(cols);
+			}
+		}
+	}
+
+	biases.resize(outputChannels);
+	weights.resize(outputChannels);
+	biasesDiff.resize(outputChannels);
+	weightsDiff.resize(outputChannels);
+	for (int outChannel = 0; outChannel < outputChannels; outChannel++) {
+		weights[outChannel].resize(inputChannels);
+		weightsDiff[outChannel].resize(inputChannels);
+		for (int inChannel = 0; inChannel < inputChannels; inChannel++) {
+			weights[outChannel][inChannel].resize(kernelSize);
+			weightsDiff[outChannel][inChannel].resize(kernelSize);
+			for (int i = 0; i < kernelSize; i++) {
+				weights[outChannel][inChannel][i].resize(kernelSize);
+				weightsDiff[outChannel][inChannel][i].resize(kernelSize);
+				for (int j = 0; j < kernelSize; j++) {
+					double r = (double)rand() / (double)RAND_MAX;
+					r *= 2.0 / (double)(inputChannels * kernelSize * kernelSize);
+					r -= 1.0 / (double)(inputChannels * kernelSize * kernelSize);
+					weights[outChannel][inChannel][i][j] = r;
+				}
+			}
+		}
+	}
+}
+
+void ConvolutionalLayer::forward(vector<vector<vector<vector<double>>>>& input) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
+		for (int out = 0; out < outputChannels; out++) {
+			for (int r2 = 0; r2 < rows; r2++) {
+				for (int c2 = 0; c2 < cols; c2++) {
+					output[b][out][r2][c2] = biases[out];
+					for (int in = 0; in < inputChannels; in++) {
+						for (int r = 0; r < kernelSize; r++) {
+							for (int c = 0; c < kernelSize; c++) {
+								int r1 = r2 + r - kernelSize / 2;
+								int c1 = c2 + c - kernelSize / 2;
+								if (r1 < 0 || r1 >= rows || c1 < 0 || c1 >= cols) {
+									continue;
+								}
+								output[b][out][r2][c2] += input[b][in][r1][c1] *
+									weights[out][in][r][c];
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void ConvolutionalLayer::backward(vector<vector<vector<vector<double>>>>& input,
+	vector<vector<vector<vector<double>>>>& nextDiff) {
+	int batchSize = input.size();
+
+	for (int b = 0; b < batchSize; b++) {
+		for (int in = 0; in < inputChannels; in++) {
+			for (int r = 0; r < rows; r++) {
+				for (int c = 0; c < cols; c++) {
+					diff[b][in][r][c] = 0;
+				}
+			}
+		}
+	}
+
+	for (int b = 0; b < batchSize; b++) {
+		for (int out = 0; out < outputChannels; out++) {
+			for (int r2 = 0; r2 < rows; r2++) {
+				for (int c2 = 0; c2 <= cols; c2++) {
+					
+					biasesDiff[out] += nextDiff[b][out][r2][c2];
+					for (int in = 0; in < inputChannels; in++) {
+						for (int r = 0; r < kernelSize; r++) {
+							for (int c = 0; c < kernelSize; c++) {
+								int r1 = r2 + r - kernelSize / 2;
+								int c1 = c2 + c - kernelSize / 2;
+								if (r1 < 0 || r1 >= rows || c1 < 0 || c1 >= cols) {
+									continue;
+								}
+								diff[b][in][r1][c1] += nextDiff[b][out][r2][c2] *
+									weights[out][in][r][c];
+								weightsDiff[out][in][r][c] += nextDiff[b][out][r2][c2] *
+									input[b][in][r1][r2];
+							}
+						}
+					}
+
+				}
+			}
+		}
+	}
+}
+
+void ConvolutionalLayer::zeroGradients() {
+	for (int out = 0; out < outputChannels; out++) {
+		biasesDiff[out] = 0;
+		for (int in = 0; in < inputChannels; in++) {
+			for (int r = 0; r < kernelSize; r++) {
+				for (int c = 0; c < kernelSize; c++) {
+					weightsDiff[out][in][r][c] = 0;
 				}
 			}
 		}

@@ -72,3 +72,26 @@ public:
 	void backward(vector<vector<vector<vector<double>>>>& input, 
 		vector<vector<vector<vector<double>>>>& nextDiff);
 };
+
+
+
+
+class ConvolutionalLayer {
+public:
+	int rows = 0, cols = 0, inputChannels = 0, outputChannels = 0, maxBatchSize = 0, 
+		kernelSize = 0;
+	vector<vector<vector<vector<double>>>> output;
+	vector<vector<vector<vector<double>>>> diff;
+	vector<vector<vector<vector<double>>>> weights;
+	vector<double> biases;
+	vector<vector<vector<vector<double>>>> weightsDiff;
+	vector<double> biasesDiff;
+
+public:
+	ConvolutionalLayer(int rows, int cols, int inputChannels, int outputChannels, 
+		int batchSize, int kernelSize = 3);
+	void forward(vector<vector<vector<vector<double>>>>& input);
+	void backward(vector<vector<vector<vector<double>>>>& input,
+		vector<vector<vector<vector<double>>>>& nextDiff);
+	void zeroGradients();
+};
