@@ -1,65 +1,79 @@
 #include <iostream>
+#include <iomanip>
 #include "layers.h"
 #include "lossFunctions.h"
 #include "optimizers.h"
 
 int main() {
-	MaxPooling pool(1, 4, 4, 1);
-	ConvolutionalLayer conv(4, 4, 1, 1, 1);
-	Adam4d weights(1, 1, 3, 3);
-	weights.l2 = 0.01;
-	Adam1d biases(1);
-	Flatten31 flatten(1, 2, 2, 1);
-	MSELoss loss(4, 1);
-	vector<vector<vector<vector<double>>>> in = {
-		{
-			{
-				{0.1, 0.6, -0.8, 0},
-				{0.4, -0.6, 0.5, 0},
-				{-0.6, 0.8, 0.8, 0},
-				{0.9, 0.6, 0, 1}
+	srand(1);
+
+
+	int batchSize = 1, channels = 1, rows = 6, cols = 6;
+	MaxPooling pool(channels, rows, cols, batchSize);
+	vector<vector<vector<vector<double>>>> in(batchSize,
+		vector<vector<vector<double>>>(channels,
+			vector<vector<double>>(rows, vector<double>(cols))));
+	vector<vector<vector<vector<double>>>> nextDiff(batchSize,
+		vector<vector<vector<double>>>(channels,
+			vector<vector<double>>(rows / 2, vector<double>(cols / 2, 0.5))));
+	
+	for (int test = 0; test < 10; test++) {
+
+
+		
+
+		for (int i1 = 0; i1 < in.size(); i1++) {
+			for (int i2 = 0; i2 < in[i1].size(); i2++) {
+				for (int i3 = 0; i3 < in[i1][i2].size(); i3++) {
+					for (int i4 = 0; i4 < in[i1][i2][i3].size(); i4++) {
+						double r = (double)rand() / (double)RAND_MAX;
+						in[i1][i2][i3][i4] = r;
+					}
+				}
 			}
 		}
-	};
-	vector<vector<double>> out = {
-		{1.3, 0.5, -1.8, 0.2}
-	};
+		pool.forward(in);
+		pool.backward(in, nextDiff);
+		for (int i1 = 0; i1 < batchSize; i1++) {
 
-	for (int e = 0; e < 50000; e++) {
-		conv.forward(in);
-		pool.forward(conv.output);
-		flatten.forward(pool.output);
-		loss.calculate(flatten.output, out);
-
-		for (int r = 0; r < conv.output[0][0].size(); r++) {
-			for (int c = 0; c < conv.output[0][0][r].size(); c++) {
-				cout << conv.output[0][0][r][c] << " ";
+			cout << "Input\n";
+			for (int i2 = 0; i2 < channels; i2++) {
+				for (int i3 = 0; i3 < rows; i3++) {
+					for (int i4 = 0; i4 < cols; i4++) {
+						cout << setw(10) << in[i1][i2][i3][i4];
+					}
+					cout << endl;
+				}
 			}
-			cout << endl;
+			cout << "\nOutput\n";
+			for (int i2 = 0; i2 < channels; i2++) {
+				for (int i3 = 0; i3 < rows / 2; i3++) {
+					for (int i4 = 0; i4 < cols / 2; i4++) {
+						cout << setw(10) << pool.output[i1][i2][i3][i4];
+					}
+					cout << endl;
+				}
+			}
+			cout << "\Diff\n";
+			for (int i2 = 0; i2 < channels; i2++) {
+				for (int i3 = 0; i3 < rows; i3++) {
+					for (int i4 = 0; i4 < cols; i4++) {
+						cout << setw(10) << pool.diff[i1][i2][i3][i4];
+					}
+					cout << endl;
+				}
+			}
+			cout << "\Memory\n";
+			for (int i2 = 0; i2 < channels; i2++) {
+				for (int i3 = 0; i3 < rows / 2; i3++) {
+					for (int i4 = 0; i4 < cols / 2; i4++) {
+						cout << setw(10) << pool.memory[i1][i2][i3][i4];
+					}
+					cout << endl;
+				}
+			}
 		}
-		cout << loss.value << endl << endl;
 
-		flatten.backward(pool.output, loss.diff);
-		pool.backward(conv.output, flatten.diff);
-
-		/*for (int r = 0; r < pool.output[0][0].size(); r++) {
-			for (int c = 0; c < pool.output[0][0][r].size(); c++) {
-				cout << pool.memory[0][0][r][c] << " ";
-			}
-			cout << endl;
-		}
-		cout << endl;
-		for (int r = 0; r < pool.diff[0][0].size(); r++) {
-			for (int c = 0; c < pool.diff[0][0][r].size(); c++) {
-				cout << pool.diff[0][0][r][c] << " ";
-			}
-			cout << endl;
-		}*/
-		cout << "\n\n\n";
-
-		conv.backward(in, pool.diff);
-		weights.step(conv.weights, conv.weightsDiff);
-		biases.step(conv.biases, conv.biasesDiff);
 	}
 
 	return 0;
