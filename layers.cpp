@@ -408,3 +408,85 @@ void Flatten31::backward(vector<vector<vector<vector<double>>>>& input,
 		}
 	}
 }
+
+
+MaxPooling::MaxPooling(int channels, int inputRows, int inputCols, int batchSize, int size) {
+	this->channels = channels;
+	this->inputRows = inputRows;
+	this->inputCols = inputCols;
+	maxBatchSize = batchSize;
+	this->size = size;
+	outputRows = inputRows / size;
+	outputCols = inputCols / size;
+
+	output.resize(maxBatchSize);
+	diff.resize(maxBatchSize);
+	memory.resize(maxBatchSize);
+	for (int b = 0; b < maxBatchSize; b++) {
+		output[b].resize(channels);
+		diff[b].resize(channels);
+		memory[b].resize(channels);
+		for (int c = 0; c < channels; c++) {
+			output[b][c].resize(outputRows);
+			memory[b][c].resize(outputRows);
+			for (int r = 0; r < outputRows; r++) {
+				output[b][c][r].resize(outputCols);
+				memory[b][c][r].resize(outputCols);
+			}
+			diff[b][c].resize(inputRows);
+			for (int r = 0; r < inputRows; r++) {
+				diff[b][c][r].resize(inputCols);
+			}
+		}
+	}
+}
+
+void MaxPooling::forward(vector<vector<vector<vector<double>>>>& input) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
+		for (int channel = 0; channel < channels; channel++) {
+			for (int r = 0; r < outputRows; r++) {
+				for (int c = 0; c < outputCols; c++) {
+					double maximum = input[b][channel][r * size][c * size];
+					memory[b][channel][r][c] = 0;
+					int i = 0;
+					for (int dr = 0; dr < size; dr++) {
+						for (int dc = 0; dc < size; dc++) {
+							if (maximum < input[b][channel][r * size + dr][c * size + dc]) {
+								maximum = input[b][channel][r * size + dr][c * size + dc];
+								memory[b][channel][r][c] = i;
+							}
+							i++;
+						}
+					}
+					output[b][channel][r][c] = maximum;
+				}
+			}
+		}
+	}
+}
+
+void MaxPooling::backward(vector<vector<vector<vector<double>>>>& input,
+	vector<vector<vector<vector<double>>>>& nextDiff) {
+	int batchSize = nextDiff.size();
+	for (int b = 0; b < batchSize; b++) {
+		for (int channel = 0; channel < channels; channel++) {
+			for (int r = 0; r < inputRows; r++) {
+				for (int c = 0; c < inputCols; c++) {
+					diff[b][channel][r][c] = 0;
+				}
+			}
+		}
+	}
+	for (int b = 0; b < batchSize; b++) {
+		for (int channel = 0; channel < channels; channel++) {
+			for (int r = 0; r < outputRows; r++) {
+				for (int c = 0; c < outputCols; c++) {
+					int dr = memory[b][channel][r][c] / size;
+					int dc = memory[b][channel][r][c] % size;
+					diff[b][channel][r * size + dr][c * size + dc] = nextDiff[b][channel][r][c];
+				}
+			}
+		}
+	}
+}
