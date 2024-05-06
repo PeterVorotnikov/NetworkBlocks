@@ -539,3 +539,48 @@ void Softmax::backward(vector<vector<double>>& input, vector<vector<double>>& ne
 		}
 	}
 }
+
+
+Dropout1d::Dropout1d(int d, int batchSize, double p) {
+	this->d = d;
+	maxBatchSize = batchSize;
+	this->p = p;
+
+	output.resize(maxBatchSize);
+	mask.resize(maxBatchSize);
+	diff.resize(maxBatchSize);
+	for (int b = 0; b < maxBatchSize; b++) {
+		output[b].resize(d);
+		mask[b].resize(d);
+		diff[b].resize(d);
+	}
+}
+
+void Dropout1d::forward(vector<vector<double>>& input, bool training) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
+		for (int i = 0; i < d; i++) {
+			mask[b][i] = 1;
+			if (training) {
+				double r = (double)rand() / (double)RAND_MAX;
+				if (r < p) {
+					mask[b][i] = 0;
+				}
+			}
+			double v = 1;
+			if (training) {
+				v /= (1.0 - p);
+			}
+			output[b][i] = input[b][i] * mask[b][i] * v;
+		}
+	}
+}
+
+void Dropout1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
+		for (int i = 0; i < d; i++) {
+			diff[b][i] = nextDiff[b][i] * mask[b][i] * (1.0 / (1.0 - p));
+		}
+	}
+}
