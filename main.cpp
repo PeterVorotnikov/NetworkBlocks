@@ -4,76 +4,25 @@
 #include "lossFunctions.h"
 #include "optimizers.h"
 
+typedef vector<vector<vector<vector<double>>>> v4;
+
 int main() {
-	srand(1);
+	vector<vector<double>> in = { {0.2, 0.9, -0.1}, {-0.2, 0, 0.1}, {0, 0.9, 0.5} };
+	vector<int> out = { 0, 1, 2 };
 
+	LinearLayer layer(3, 3, 3);
+	Adam2d weights(3, 3);
+	Adam1d biases(3);
+	CategoricalCrossentropyLoss loss(3, 3);
 
-	int batchSize = 1, channels = 1, rows = 6, cols = 6;
-	MaxPooling pool(channels, rows, cols, batchSize);
-	vector<vector<vector<vector<double>>>> in(batchSize,
-		vector<vector<vector<double>>>(channels,
-			vector<vector<double>>(rows, vector<double>(cols))));
-	vector<vector<vector<vector<double>>>> nextDiff(batchSize,
-		vector<vector<vector<double>>>(channels,
-			vector<vector<double>>(rows / 2, vector<double>(cols / 2, 0.5))));
-	
-	for (int test = 0; test < 10; test++) {
-
-
-		
-
-		for (int i1 = 0; i1 < in.size(); i1++) {
-			for (int i2 = 0; i2 < in[i1].size(); i2++) {
-				for (int i3 = 0; i3 < in[i1][i2].size(); i3++) {
-					for (int i4 = 0; i4 < in[i1][i2][i3].size(); i4++) {
-						double r = (double)rand() / (double)RAND_MAX;
-						in[i1][i2][i3][i4] = r;
-					}
-				}
-			}
-		}
-		pool.forward(in);
-		pool.backward(in, nextDiff);
-		for (int i1 = 0; i1 < batchSize; i1++) {
-
-			cout << "Input\n";
-			for (int i2 = 0; i2 < channels; i2++) {
-				for (int i3 = 0; i3 < rows; i3++) {
-					for (int i4 = 0; i4 < cols; i4++) {
-						cout << setw(10) << in[i1][i2][i3][i4];
-					}
-					cout << endl;
-				}
-			}
-			cout << "\nOutput\n";
-			for (int i2 = 0; i2 < channels; i2++) {
-				for (int i3 = 0; i3 < rows / 2; i3++) {
-					for (int i4 = 0; i4 < cols / 2; i4++) {
-						cout << setw(10) << pool.output[i1][i2][i3][i4];
-					}
-					cout << endl;
-				}
-			}
-			cout << "\Diff\n";
-			for (int i2 = 0; i2 < channels; i2++) {
-				for (int i3 = 0; i3 < rows; i3++) {
-					for (int i4 = 0; i4 < cols; i4++) {
-						cout << setw(10) << pool.diff[i1][i2][i3][i4];
-					}
-					cout << endl;
-				}
-			}
-			cout << "\Memory\n";
-			for (int i2 = 0; i2 < channels; i2++) {
-				for (int i3 = 0; i3 < rows / 2; i3++) {
-					for (int i4 = 0; i4 < cols / 2; i4++) {
-						cout << setw(10) << pool.memory[i1][i2][i3][i4];
-					}
-					cout << endl;
-				}
-			}
-		}
-
+	for (int e = 0; e < 30000; e++) {
+		layer.forward(in);
+		loss.calculate(layer.output, out);
+		cout << loss.value << endl;
+		layer.backward(in, loss.diff);
+		weights.step(layer.weights, layer.weightsDiff);
+		biases.step(layer.biases, layer.biasesDiff);
+		layer.zeroGradients();
 	}
 
 	return 0;

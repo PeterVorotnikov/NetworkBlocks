@@ -20,3 +20,33 @@ void MSELoss::calculate(vector<vector<double>>& output, vector<vector<double>>& 
 		}
 	}
 }
+
+
+
+CathegoricalCrossentropyLoss::CathegoricalCrossentropyLoss(int n, int batchSize) {
+	nOfClasses = n;
+	maxBatchSize = batchSize;
+	diff.resize(maxBatchSize);
+	for (int b = 0; b < maxBatchSize; b++) {
+		diff[b].resize(nOfClasses);
+	}
+}
+
+void CathegoricalCrossentropyLoss::calculate(vector<vector<double>>& output, 
+	vector<int>& target) {
+	int batchSize = output.size();
+	value = 0;
+	for (int b = 0; b < batchSize; b++) {
+		double sumOfExponent = 0;
+		for (int i = 0; i < nOfClasses; i++) {
+			sumOfExponent += exp(output[b][i]);
+		}
+		value += -output[b][target[b]] + log(sumOfExponent);
+		for (int i = 0; i < nOfClasses; i++) {
+			diff[b][i] = exp(output[b][i]) / sumOfExponent;
+			if (i == target[b]) {
+				diff[b][i] += (-1);
+			}
+		}
+	}
+}
