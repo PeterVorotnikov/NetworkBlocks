@@ -129,3 +129,16 @@ public:
 	void backward(vector<vector<vector<vector<double>>>>& input,
 		vector<vector<vector<vector<double>>>>& nextDiff);
 };
+
+
+class Softmax {
+public:
+	int d = 0, maxBatchSize = 0;
+	vector<vector<double>> output;
+	vector<vector<double>> diff;
+	vector<double> exponents;
+public:
+	Softmax(int d, int batchSize);
+	void forward(vector<vector<double>>& input);
+	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+};

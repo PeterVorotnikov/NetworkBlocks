@@ -490,3 +490,52 @@ void MaxPooling::backward(vector<vector<vector<vector<double>>>>& input,
 		}
 	}
 }
+
+
+
+Softmax::Softmax(int d, int batchSize) {
+	this->d = d;
+	maxBatchSize = batchSize;
+	output.resize(maxBatchSize);
+	diff.resize(maxBatchSize);
+	for (int b = 0; b < maxBatchSize; b++) {
+		output[b].resize(d);
+		diff[b].resize(d);
+	}
+	exponents.resize(d);
+}
+
+void Softmax::forward(vector<vector<double>>& input) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
+		double sumOfExponents = 0;
+		for (int i = 0; i < d; i++) {
+			sumOfExponents += exp(input[b][i]);
+		}
+		for (int i = 0; i < d; i++) {
+			output[b][i] = exp(input[b][i]) / sumOfExponents;
+		}
+	}
+}
+
+void Softmax::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
+	int batchSize = nextDiff.size();
+	for (int b = 0; b < batchSize; b++) {
+		double sumOfExponents = 0;
+		for (int i = 0; i < d; i++) {
+			exponents[i] = exp(input[b][i]);
+			sumOfExponents += exponents[i];
+		}
+		for (int in = 0; in < d; in++) {
+			diff[b][in] = 0;
+			for (int out = 0; out < d; out++) {
+				double v = -exponents[out] / pow(sumOfExponents, 2);
+				if (in == out) {
+					v = (exponents[out] * sumOfExponents - pow(exponents[out], 2)) /
+						pow(sumOfExponents, 2);
+				}
+				diff[b][in] += nextDiff[b][out] * v;
+			}
+		}
+	}
+}

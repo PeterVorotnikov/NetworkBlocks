@@ -23,7 +23,7 @@ void MSELoss::calculate(vector<vector<double>>& output, vector<vector<double>>& 
 
 
 
-CathegoricalCrossentropyLoss::CathegoricalCrossentropyLoss(int n, int batchSize) {
+CategoricalCrossentropyLoss::CategoricalCrossentropyLoss(int n, int batchSize) {
 	nOfClasses = n;
 	maxBatchSize = batchSize;
 	diff.resize(maxBatchSize);
@@ -32,7 +32,7 @@ CathegoricalCrossentropyLoss::CathegoricalCrossentropyLoss(int n, int batchSize)
 	}
 }
 
-void CathegoricalCrossentropyLoss::calculate(vector<vector<double>>& output, 
+void CategoricalCrossentropyLoss::calculate(vector<vector<double>>& output, 
 	vector<int>& target) {
 	int batchSize = output.size();
 	value = 0;
