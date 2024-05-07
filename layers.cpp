@@ -584,3 +584,70 @@ void Dropout1d::backward(vector<vector<double>>& input, vector<vector<double>>& 
 		}
 	}
 }
+
+
+Dropout3d::Dropout3d(int d1, int d2, int d3, int batchSize, double p) {
+	this->d1 = d1;
+	this->d2 = d2;
+	this->d3 = d3;
+	maxBatchSize = batchSize;
+	this->p = p;
+
+	output.resize(maxBatchSize);
+	mask.resize(maxBatchSize);
+	diff.resize(maxBatchSize);
+	for (int b = 0; b < maxBatchSize; b++) {
+		output[b].resize(d1);
+		mask[b].resize(d1);
+		diff[b].resize(d1);
+		for (int i1 = 0; i1 < d1; i1++) {
+			output[b][i1].resize(d2);
+			mask[b][i1].resize(d2);
+			diff[b][i1].resize(d2);
+			for (int i2 = 0; i2 < d2; i2++) {
+				output[b][i1][i2].resize(d3);
+				mask[b][i1][i2].resize(d3);
+				diff[b][i1][i2].resize(d3);
+			}
+		}
+	}
+}
+
+void Dropout3d::forward(vector<vector<vector<vector<double>>>>& input, bool training = true) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					mask[b][i1][i2][i3] = 1;
+					if (training) {
+						double r = (double)rand() / (double)RAND_MAX;
+						if (r < p) {
+							mask[b][i1][i2][i3] = 0;
+						}
+					}
+					double v = 1;
+					if (training) {
+						v /= (1.0 - p);
+					}
+					output[b][i1][i2][i3] = input[b][i1][i2][i3] * mask[b][i1][i2][i3] * v;
+				}
+			}
+		}
+	}
+}
+
+void Dropout3d::backward(vector<vector<vector<vector<double>>>>& input,
+	vector<vector<vector<vector<double>>>>& nextDiff) {
+	int batchSize = input.size();
+	for (int b = 0; b < batchSize; b++) {
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					diff[b][i1][i2][i3] = 
+						nextDiff[b][i1][i2][i3] * mask[b][i1][i2][i3] * (1.0 / (1.0 - p));
+				}
+			}
+		}
+	}
+}

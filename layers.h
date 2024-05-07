@@ -157,3 +157,17 @@ public:
 	void forward(vector<vector<double>>& input, bool training = true);
 	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
 };
+
+class Dropout3d {
+public:
+	int d1 = 0, d2 = 0, d3 = 0, maxBatchSize = 0;
+	double p = 0;
+	vector<vector<vector<vector<double>>>> output;
+	vector<vector<vector<vector<double>>>> mask;
+	vector<vector<vector<vector<double>>>> diff;
+public:
+	Dropout3d(int d1, int d2, int d3, int batchSize, double p = 0.5);
+	void forward(vector<vector<vector<vector<double>>>>& input, bool training = true);
+	void backward(vector<vector<vector<vector<double>>>>& input,
+		vector<vector<vector<vector<double>>>>& nextDiff);
+};
