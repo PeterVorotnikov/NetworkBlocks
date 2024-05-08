@@ -190,3 +190,23 @@ public:
 	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
 	void zeroGradients();
 };
+
+
+class BatchNormalization3d {
+public:
+	int d1 = 0, d2 = 0, d3 = 0, maxBatchSize = 0, count = 0;
+	double epsilon = pow(10, -8);
+
+	vector<vector<vector<vector<double>>>> output, diff;
+	vector<vector<vector<double>>> gamma, beta, gammaDiff, betaDiff;
+
+	vector<vector<vector<double>>> muLearn, varLearn, stdLearn, muLearnDiff, varLearnDiff;
+	vector<vector<vector<double>>> mu, std;
+
+public:
+	BatchNormalization3d(int d1, int d2, int d3, int batchSize);
+	void forward(vector<vector<vector<vector<double>>>>& input, bool training = true);
+	void backward(vector<vector<vector<vector<double>>>>& input,
+		vector<vector<vector<vector<double>>>>& nextDiff);
+	void zeroGradients();
+};

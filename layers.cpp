@@ -743,3 +743,157 @@ void BatchNormalization1d::zeroGradients() {
 		betaDiff[i] = 0;
 	}
 }
+
+
+BatchNormalization3d::BatchNormalization3d(int d1, int d2, int d3, int batchSize) {
+	this->d1 = d1;
+	this->d2 = d2;
+	this->d3 = d3;
+	maxBatchSize = batchSize;
+
+	output.resize(maxBatchSize);
+	diff.resize(maxBatchSize);
+	for (int b = 0; b < maxBatchSize; b++) {
+		output[b].resize(d1);
+		diff[b].resize(d1);
+		for (int i1 = 0; i1 < d1; i1++) {
+			output[b][i1].resize(d2);
+			diff[b][i1].resize(d2);
+			for (int i2 = 0; i2 < d2; i2++) {
+				output[b][i1][i2].resize(d3);
+				diff[b][i1][i2].resize(d3);
+			}
+		}
+	}
+
+	muLearn.resize(d1);
+	varLearn.resize(d1);
+	stdLearn.resize(d1);
+	muLearnDiff.resize(d1);
+	varLearnDiff.resize(d1);
+	mu.resize(d1);
+	std.resize(d1);
+	gamma.resize(d1);
+	beta.resize(d1);
+	gammaDiff.resize(d1);
+	betaDiff.resize(d1);
+	for (int i1 = 0; i1 < d1; i1++) {
+		muLearn[i1].resize(d2);
+		varLearn[i1].resize(d2);
+		stdLearn[i1].resize(d2);
+		muLearnDiff[i1].resize(d2);
+		varLearnDiff[i1].resize(d2);
+		mu[i1].resize(d2);
+		std[i1].resize(d2);
+		gamma[i1].resize(d2);
+		beta[i1].resize(d2);
+		gammaDiff[i1].resize(d2);
+		betaDiff[i1].resize(d2);
+		for (int i2 = 0; i2 < d2; i2++) {
+			muLearn[i1][i2].resize(d3);
+			varLearn[i1][i2].resize(d3);
+			stdLearn[i1][i2].resize(d3);
+			muLearnDiff[i1][i2].resize(d3);
+			varLearnDiff[i1][i2].resize(d3);
+			mu[i1][i2].resize(d3);
+			std[i1][i2].resize(d3);
+			gamma[i1][i2].resize(d3);
+			beta[i1][i2].resize(d3);
+			gammaDiff[i1][i2].resize(d3);
+			betaDiff[i1][i2].resize(d3);
+			for (int i3 = 0; i3 < d3; i3++) {
+				gamma[i1][i2][i3] = 1;
+				std[i1][i2][i3] = 1;
+			}
+		}
+	}
+}
+
+void BatchNormalization3d::forward(vector<vector<vector<vector<double>>>>& input, 
+	bool training) {
+	int batchSize = input.size();
+	if (training) {
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					double summ = 0, sumOfSquares = 0;
+					for (int b = 0; b < batchSize; b++) {
+						summ += input[b][i1][i2][i3];
+						sumOfSquares += pow(input[b][i1][i2][i3], 2);
+					}
+					muLearn[i1][i2][i3] = summ / (double)batchSize;
+					varLearn[i1][i2][i3] = sumOfSquares / (double)batchSize -
+						pow(muLearn[i1][i2][i3], 2) + epsilon;
+					stdLearn[i1][i2][i3] = sqrt(varLearn[i1][i2][i3]);
+					mu[i1][i2][i3] = 0.9 * mu[i1][i2][i3] + 0.1 * muLearn[i1][i2][i3];
+					std[i1][i2][i3] = 0.9 * std[i1][i2][i3] + 0.1 * stdLearn[i1][i2][i3];
+				}
+			}
+		}
+	}
+
+	for (int i1 = 0; i1 < d1; i1++) {
+		for (int i2 = 0; i2 < d2; i2++) {
+			for (int i3 = 0; i3 < d3; i3++) {
+				for (int b = 0; b < batchSize; b++) {
+					if (training) {
+						output[b][i1][i2][i3] = (input[b][i1][i2][i3] - muLearn[i1][i2][i3]) / 
+							stdLearn[i1][i2][i3] * gamma[i1][i2][i3] + beta[i1][i2][i3];
+					}
+					else {
+						output[b][i1][i2][i3] = (input[b][i1][i2][i3] - mu[i1][i2][i3]) /
+							std[i1][i2][i3] * gamma[i1][i2][i3] + beta[i1][i2][i3];
+					}
+				}
+			}
+		}
+	}
+}
+
+void BatchNormalization3d::backward(vector<vector<vector<vector<double>>>>& input,
+	vector<vector<vector<vector<double>>>>& nextDiff) {
+	int batchSize = nextDiff.size();
+
+	for (int i1 = 0; i1 < d1; i1++) {
+		for (int i2 = 0; i2 < d2; i2++) {
+			for (int i3 = 0; i3 < d3; i3++) {
+				muLearnDiff[i1][i2][i3] = 0;
+				varLearnDiff[i1][i2][i3] = 0;
+				for (int b = 0; b < batchSize; b++) {
+					gammaDiff[i1][i2][i3] += nextDiff[b][i1][i2][i3] * 
+						(input[b][i1][i2][i3] - muLearn[i1][i2][i3]) / stdLearn[i1][i2][i3];
+					betaDiff[i1][i2][i3] += nextDiff[b][i1][i2][i3];
+					muLearnDiff[i1][i2][i3] += -gamma[i1][i2][i3] / stdLearn[i1][i2][i3] * 
+						nextDiff[b][i1][i2][i3];
+					varLearnDiff[i1][i2][i3] += -gamma[i1][i2][i3] * 
+						(input[b][i1][i2][i3] - muLearn[i1][i2][i3]) / 2.0 /
+						pow(stdLearn[i1][i2][i3], 3) * nextDiff[b][i1][i2][i3];
+				}
+			}
+		}
+	}
+
+	for (int i1 = 0; i1 < d1; i1++) {
+		for (int i2 = 0; i2 < d2; i2++) {
+			for (int i3 = 0; i3 < d3; i3++) {
+				for (int b = 0; b < batchSize; b++) {
+					diff[b][i1][i2][i3] = nextDiff[b][i1][i2][i3] * gamma[i1][i2][i3] / 
+						stdLearn[i1][i2][i3] + varLearnDiff[i1][i2][i3] * 2.0 / 
+						(double)batchSize * (input[b][i1][i2][i3] - muLearn[i1][i2][i3]) +
+						muLearnDiff[i1][i2][i3] / (double)batchSize;
+				}
+			}
+		}
+	}
+}
+
+void BatchNormalization3d::zeroGradients() {
+	for (int i1 = 0; i1 < d1; i1++) {
+		for (int i2 = 0; i2 < d2; i2++) {
+			for (int i3 = 0; i3 < d3; i3++) {
+				gammaDiff[i1][i2][i3] = 0;
+				betaDiff[i1][i2][i3] = 0;
+			}
+		}
+	}
+}

@@ -70,6 +70,55 @@ public:
 
 
 
+class Adam3d {
+public:
+	int d1 = 0, d2 = 0, d3 = 0;
+	double alpha = 0, beta1 = 0, beta2 = 0, l2 = 0;
+	double epsilon = pow(10, -8);
+	vector<vector<vector<double>>> v;
+	vector<vector<vector<double>>> g;
+
+public:
+	Adam3d(int d1, int d2, int d3, double alpha = 0.0003, double beta1 = 0.9,
+		double beta2 = 0.99, double l2 = 0) {
+		this->d1 = d1;
+		this->d2 = d2;
+		this->d3 = d3;
+		this->alpha = alpha;
+		this->beta1 = beta1;
+		this->beta2 = beta2;
+		this->l2 = l2;
+
+		v.resize(d1);
+		g.resize(d1);
+		for (int i = 0; i < d1; i++) {
+			v[i].resize(d2);
+			g[i].resize(d2);
+			for (int j = 0; j < d2; j++) {
+				v[i][j].resize(d3);
+				g[i][j].resize(d3);
+			}
+		}
+	}
+	void step(vector<vector<vector<double>>>& parameters,
+		vector<vector<vector<double>>>& diff) {
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					v[i1][i2][i3] = beta1 * v[i1][i2][i3] + (1 - beta1) *
+						(diff[i1][i2][i3] + 2 * l2 * parameters[i1][i2][i3]);
+					g[i1][i2][i3] = beta2 * g[i1][i2][i3] + (1 - beta2) *
+						pow(diff[i1][i2][i3], 2);
+					parameters[i1][i2][i3] -= alpha / sqrt(g[i1][i2][i3] + epsilon) *
+						v[i1][i2][i3];
+				}
+			}
+		}
+	}
+};
+
+
+
 class Adam4d {
 public:
 	int d1 = 0, d2 = 0, d3 = 0, d4 = 0;
