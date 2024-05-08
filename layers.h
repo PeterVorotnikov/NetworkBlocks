@@ -171,3 +171,22 @@ public:
 	void backward(vector<vector<vector<vector<double>>>>& input,
 		vector<vector<vector<vector<double>>>>& nextDiff);
 };
+
+
+class BatchNormalization1d {
+public:
+	int d = 0, maxBatchSize = 0, count = 0;
+	double epsilon = pow(10, -8);
+
+	vector<vector<double>> output, diff;
+	vector<double> gamma, beta, gammaDiff, betaDiff;
+
+	vector<double> muLearn, varLearn, stdLearn, muLearnDiff, varLearnDiff;
+	vector<double> mu, std;
+
+public:
+	BatchNormalization1d(int d, int batchSize);
+	void forward(vector<vector<double>>& input, bool training = true);
+	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+	void zeroGradients();
+};

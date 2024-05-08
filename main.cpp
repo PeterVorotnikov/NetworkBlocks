@@ -12,8 +12,8 @@ void print(vector<double>& v) {
 }
 
 int main() {
-	cout.precision(3);
-	int batches = 10, sizeIn = 20, sizeOut = 10;
+	cout.precision(5);
+	int batches = 100, sizeIn = 200, sizeOut = 10;
 	vector<vector<double>> in(batches, vector<double>(sizeIn));
 	vector<vector<double>> out(batches, vector<double>(sizeIn));
 	for (int b = 0; b < batches; b++) {
@@ -36,27 +36,62 @@ int main() {
 
 	LinearLayer layer1(sizeIn, 15, batches);
 	Sigmoid1d activation(15, batches);
-	Dropout1d drop1(15, batches, 0.5);
+	BatchNormalization1d norm(15, batches);
 	LinearLayer layer2(15, sizeOut, batches);
 	MSELoss loss(sizeOut, batches);
 
-	Adam2d weights1(sizeIn, 15);
-	Adam1d biases1(15);
-	Adam2d weights2(15, sizeOut);
-	Adam1d biases2(sizeOut);
+	Adam2d weights1(sizeIn, 15, 0.01);
+	Adam1d biases1(15, 0.01);
+	Adam2d weights2(15, sizeOut, 0.01);
+	Adam1d biases2(sizeOut, 0.01);
+	Adam1d gamma(15);
+	Adam1d beta(15);
 
-	for (int e = 0; e < 20000; e++) {
+	for (int e = 0; e < 2000; e++) {
 		layer1.forward(in);
 		activation.forward(layer1.output);
-		drop1.forward(activation.output);
-		layer2.forward(drop1.output);
+		norm.forward(activation.output);
+		layer2.forward(norm.output);
 		loss.calculate(layer2.output, out);
 
 		cout << setw(16) << loss.value;
 
-		layer2.backward(drop1.output, loss.diff);
-		drop1.backward(activation.output, layer2.diff);
-		activation.backward(layer1.output, drop1.diff);
+		layer2.backward(norm.output, loss.diff);
+		norm.backward(activation.output, layer2.diff);
+		activation.backward(layer1.output, norm.diff);
+		layer1.backward(in, activation.diff);
+
+		
+
+		layer1.forward(in);
+		activation.forward(layer1.output);
+		norm.forward(activation.output, false);
+		layer2.forward(norm.output);
+		loss.calculate(layer2.output, out);
+		cout << setw(16) << loss.value << endl;
+
+
+		weights1.step(layer1.weights, layer1.weightsDiff);
+		biases1.step(layer1.biases, layer1.biasesDiff);
+		weights2.step(layer2.weights, layer2.weightsDiff);
+		biases2.step(layer2.biases, layer2.biasesDiff);
+		gamma.step(norm.gamma, norm.gammaDiff);
+		beta.step(norm.beta, norm.betaDiff);
+		layer1.zeroGradients();
+		layer2.zeroGradients();
+		norm.zeroGradients();
+
+		//cout << setw(10) << norm.u1[0] << setw(10) << norm.u2[0] << setw(10) << norm.count << "\n\n";
+
+		/*layer1.forward(in);
+		activation.forward(layer1.output);
+		layer2.forward(activation.output);
+		loss.calculate(layer2.output, out);
+
+		cout << setw(16) << loss.value;
+
+		layer2.backward(activation.output, loss.diff);
+		activation.backward(layer1.output, layer2.diff);
 		layer1.backward(in, activation.diff);
 
 		weights1.step(layer1.weights, layer1.weightsDiff);
@@ -68,10 +103,9 @@ int main() {
 
 		layer1.forward(in);
 		activation.forward(layer1.output);
-		drop1.forward(activation.output, false);
-		layer2.forward(drop1.output);
+		layer2.forward(activation.output);
 		loss.calculate(layer2.output, out);
-		cout << setw(6) << loss.value << endl;
+		cout << setw(16) << loss.value << endl;*/
 	}
 
 
