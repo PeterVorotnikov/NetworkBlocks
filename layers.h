@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <random>
 #include <cmath>
@@ -30,6 +31,8 @@ public:
 	void forward(vector<vector<double>>& input);
 	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
 	void zeroGradients();
+	void save(string fileName);
+	void load(string fileName);
 };
 
 
@@ -96,6 +99,8 @@ public:
 	void backward(vector<vector<vector<vector<double>>>>& input,
 		vector<vector<vector<vector<double>>>>& nextDiff);
 	void zeroGradients();
+	void save(string fileName);
+	void load(string fileName);
 };
 
 
@@ -189,6 +194,8 @@ public:
 	void forward(vector<vector<double>>& input, bool training = true);
 	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
 	void zeroGradients();
+	void save(string fileName);
+	void load(string fileName);
 };
 
 
@@ -209,4 +216,6 @@ public:
 	void backward(vector<vector<vector<vector<double>>>>& input,
 		vector<vector<vector<vector<double>>>>& nextDiff);
 	void zeroGradients();
+	void save(string fileName);
+	void load(string fileName);
 };

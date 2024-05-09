@@ -82,6 +82,28 @@ void LinearLayer::zeroGradients() {
 	}
 }
 
+void LinearLayer::save(string fileName) {
+	ofstream file(fileName);
+	for (int out = 0; out < nOfOutputs; out++) {
+		file << biases[out] << " ";
+		for (int in = 0; in < nOfInputs; in++) {
+			file << weights[in][out] << " ";
+		}
+	}
+	file.close();
+}
+
+void LinearLayer::load(string fileName) {
+	ifstream file(fileName);
+	for (int out = 0; out < nOfOutputs; out++) {
+		file >> biases[out];
+		for (int in = 0; in < nOfInputs; in++) {
+			file >> weights[in][out];
+		}
+	}
+	file.close();
+}
+
 
 
 
@@ -355,6 +377,37 @@ void ConvolutionalLayer::zeroGradients() {
 		}
 	}
 }
+
+void ConvolutionalLayer::save(string fileName) {
+	ofstream file(fileName);
+	for (int out = 0; out < outputChannels; out++) {
+		file << biases[out] << " ";
+		for (int in = 0; in < inputChannels; in++) {
+			for (int r = 0; r < kernelSize; r++) {
+				for (int c = 0; c < kernelSize; c++) {
+					file << weights[out][in][r][c] << " ";
+				}
+			}
+		}
+	}
+	file.close();
+}
+
+void ConvolutionalLayer::load(string fileName) {
+	ifstream file(fileName);
+	for (int out = 0; out < outputChannels; out++) {
+		file >> biases[out];
+		for (int in = 0; in < inputChannels; in++) {
+			for (int r = 0; r < kernelSize; r++) {
+				for (int c = 0; c < kernelSize; c++) {
+					file >> weights[out][in][r][c];
+				}
+			}
+		}
+	}
+	file.close();
+}
+
 
 
 Flatten31::Flatten31(int d1, int d2, int d3, int batchSize) {
@@ -744,6 +797,22 @@ void BatchNormalization1d::zeroGradients() {
 	}
 }
 
+void BatchNormalization1d::save(string fileName) {
+	ofstream file(fileName);
+	for (int i = 0; i < d; i++) {
+		file << gamma[i] << " " << beta[i] << " " << mu[i] << " " << std[i] << " ";
+	}
+	file.close();
+}
+
+void BatchNormalization1d::load(string fileName) {
+	ifstream file(fileName);
+	for (int i = 0; i < d; i++) {
+		file >> gamma[i] >> beta[i] >> mu[i] >> std[i];
+	}
+	file.close();
+}
+
 
 BatchNormalization3d::BatchNormalization3d(int d1, int d2, int d3, int batchSize) {
 	this->d1 = d1;
@@ -896,4 +965,30 @@ void BatchNormalization3d::zeroGradients() {
 			}
 		}
 	}
+}
+
+void BatchNormalization3d::save(string fileName) {
+	ofstream file(fileName);
+	for (int i1 = 0; i1 < d1; i1++) {
+		for (int i2 = 0; i2 < d2; i2++) {
+			for (int i3 = 0; i3 < d3; i3++) {
+				file << gamma[i1][i2][i3] << " " << beta[i1][i2][i3] << " " << 
+					mu[i1][i2][i3] << " " << std[i1][i2][i3] << " ";
+			}
+		}
+	}
+	file.close();
+}
+
+void BatchNormalization3d::load(string fileName) {
+	ifstream file(fileName);
+	for (int i1 = 0; i1 < d1; i1++) {
+		for (int i2 = 0; i2 < d2; i2++) {
+			for (int i3 = 0; i3 < d3; i3++) {
+				file >> gamma[i1][i2][i3] >> beta[i1][i2][i3] >> mu[i1][i2][i3] >> 
+					std[i1][i2][i3];
+			}
+		}
+	}
+	file.close();
 }

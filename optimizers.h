@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <vector>
 
 using namespace std;
@@ -28,6 +29,20 @@ public:
 			g[i] = beta2 * g[i] + (1 - beta2) * pow(diff[i], 2);
 			parameters[i] -= alpha / sqrt(g[i] + epsilon) * v[i];
 		}
+	}
+	void save(string fileName) {
+		ofstream file(fileName);
+		for (int i = 0; i < d; i++) {
+			file << v[i] << " " << g[i] << " ";
+		}
+		file.close();
+	}
+	void load(string fileName) {
+		ifstream file(fileName);
+		for (int i = 0; i < d; i++) {
+			file >> v[i] >> g[i];
+		}
+		file.close();
 	}
 };
 
@@ -65,6 +80,24 @@ public:
 				parameters[i1][i2] -= alpha / sqrt(g[i1][i2] + epsilon) * v[i1][i2];
 			}
 		}
+	}
+	void save(string fileName) {
+		ofstream file(fileName);
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				file << v[i1][i2] << " " << g[i1][i2] << " ";
+			}
+		}
+		file.close();
+	}
+	void load(string fileName) {
+		ifstream file(fileName);
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				file >> v[i1][i2] >> g[i1][i2];
+			}
+		}
+		file.close();
 	}
 };
 
@@ -114,6 +147,28 @@ public:
 				}
 			}
 		}
+	}
+	void save(string fileName) {
+		ofstream file(fileName);
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					file << v[i1][i2][i3] << " " << g[i1][i2][i3] << " ";
+				}
+			}
+		}
+		file.close();
+	}
+	void load(string fileName) {
+		ifstream file(fileName);
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					file >> v[i1][i2][i3] >> g[i1][i2][i3];
+				}
+			}
+		}
+		file.close();
 	}
 };
 
@@ -170,5 +225,31 @@ public:
 				}
 			}
 		}
+	}
+	void save(string fileName) {
+		ofstream file(fileName);
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					for (int i4 = 0; i4 < d4; i4++) {
+						file << v[i1][i2][i3][i4] << " " << g[i1][i2][i3][i4] << " ";
+					}
+				}
+			}
+		}
+		file.close();
+	}
+	void load(string fileName) {
+		ifstream file(fileName);
+		for (int i1 = 0; i1 < d1; i1++) {
+			for (int i2 = 0; i2 < d2; i2++) {
+				for (int i3 = 0; i3 < d3; i3++) {
+					for (int i4 = 0; i4 < d4; i4++) {
+						file >> v[i1][i2][i3][i4] >> g[i1][i2][i3][i4];
+					}
+				}
+			}
+		}
+		file.close();
 	}
 };
