@@ -28,8 +28,8 @@ private:
 
 public:
 	LinearLayer(int inputs, int outputs, int batchSize);
-	void forward(vector<vector<double>>& input);
-	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+	void forward(vector<vector<double>>& input, int batchSize);
+	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, int batchSize);
 	void zeroGradients();
 	void save(string fileName);
 	void load(string fileName);
@@ -45,8 +45,8 @@ public:
 
 public:
 	ReLU1d(int d, int batchSize, int l = 0);
-	void forward(vector<vector<double>>& input);
-	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+	void forward(vector<vector<double>>& input, int batchSize);
+	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, int batchSize);
 };
 
 class Sigmoid1d {
@@ -60,8 +60,8 @@ public:
 
 public:
 	Sigmoid1d(int d, int batchSize);
-	void forward(vector<vector<double>>& input);
-	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+	void forward(vector<vector<double>>& input, int batchSize);
+	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, int batchSize);
 };
 
 
@@ -73,9 +73,9 @@ public:
 
 public:
 	ReLU3d(int d1, int d2, int d3, int batchSize, int l = 0);
-	void forward(vector<vector<vector<vector<double>>>>& input);
+	void forward(vector<vector<vector<vector<double>>>>& input, int batchSize);
 	void backward(vector<vector<vector<vector<double>>>>& input, 
-		vector<vector<vector<vector<double>>>>& nextDiff);
+		vector<vector<vector<vector<double>>>>& nextDiff, int batchSize);
 };
 
 
@@ -95,9 +95,9 @@ public:
 public:
 	ConvolutionalLayer(int rows, int cols, int inputChannels, int outputChannels, 
 		int batchSize, int kernelSize = 3);
-	void forward(vector<vector<vector<vector<double>>>>& input);
+	void forward(vector<vector<vector<vector<double>>>>& input, int batchSize);
 	void backward(vector<vector<vector<vector<double>>>>& input,
-		vector<vector<vector<vector<double>>>>& nextDiff);
+		vector<vector<vector<vector<double>>>>& nextDiff, int batchSize);
 	void zeroGradients();
 	void save(string fileName);
 	void load(string fileName);
@@ -114,9 +114,9 @@ public:
 
 public:
 	Flatten31(int d1, int d2, int d3, int batchSize);
-	void forward(vector<vector<vector<vector<double>>>>& input);
+	void forward(vector<vector<vector<vector<double>>>>& input, int batchSize);
 	void backward(vector<vector<vector<vector<double>>>>& input, 
-		vector<vector<double>>& nextDiff);
+		vector<vector<double>>& nextDiff, int batchSize);
 };
 
 
@@ -130,9 +130,9 @@ public:
 
 public:
 	MaxPooling(int channels, int inputRows, int inputCols, int batchSize, int size = 2);
-	void forward(vector<vector<vector<vector<double>>>>& input);
+	void forward(vector<vector<vector<vector<double>>>>& input, int batchSize);
 	void backward(vector<vector<vector<vector<double>>>>& input,
-		vector<vector<vector<vector<double>>>>& nextDiff);
+		vector<vector<vector<vector<double>>>>& nextDiff, int batchSize);
 };
 
 
@@ -144,8 +144,8 @@ public:
 	vector<double> exponents;
 public:
 	Softmax(int d, int batchSize);
-	void forward(vector<vector<double>>& input);
-	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+	void forward(vector<vector<double>>& input, int batchSize);
+	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, int batchSize);
 };
 
 
@@ -159,8 +159,8 @@ public:
 	vector<vector<double>> diff;
 public:
 	Dropout1d(int d, int batchSize, double p = 0.5);
-	void forward(vector<vector<double>>& input, bool training = true);
-	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+	void forward(vector<vector<double>>& input, int batchSize, bool training = true);
+	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, int batchSize);
 };
 
 class Dropout3d {
@@ -172,9 +172,9 @@ public:
 	vector<vector<vector<vector<double>>>> diff;
 public:
 	Dropout3d(int d1, int d2, int d3, int batchSize, double p = 0.5);
-	void forward(vector<vector<vector<vector<double>>>>& input, bool training = true);
+	void forward(vector<vector<vector<vector<double>>>>& input, int batchSize, bool training = true);
 	void backward(vector<vector<vector<vector<double>>>>& input,
-		vector<vector<vector<vector<double>>>>& nextDiff);
+		vector<vector<vector<vector<double>>>>& nextDiff, int batchSize);
 };
 
 
@@ -191,8 +191,8 @@ public:
 
 public:
 	BatchNormalization1d(int d, int batchSize);
-	void forward(vector<vector<double>>& input, bool training = true);
-	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff);
+	void forward(vector<vector<double>>& input, int batchSize, bool training = true);
+	void backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, int batchSize);
 	void zeroGradients();
 	void save(string fileName);
 	void load(string fileName);
@@ -212,9 +212,10 @@ public:
 
 public:
 	BatchNormalization3d(int d1, int d2, int d3, int batchSize);
-	void forward(vector<vector<vector<vector<double>>>>& input, bool training = true);
+	void forward(vector<vector<vector<vector<double>>>>& input, int batchSize, 
+		bool training = true);
 	void backward(vector<vector<vector<vector<double>>>>& input,
-		vector<vector<vector<vector<double>>>>& nextDiff);
+		vector<vector<vector<vector<double>>>>& nextDiff, int batchSize);
 	void zeroGradients();
 	void save(string fileName);
 	void load(string fileName);

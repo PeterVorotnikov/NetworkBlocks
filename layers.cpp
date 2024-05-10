@@ -43,8 +43,7 @@ void LinearLayer::init() {
 	initWeights();
 }
 
-void LinearLayer::forward(vector<vector<double>>& input) {
-	int batchSize = input.size();
+void LinearLayer::forward(vector<vector<double>>& input, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int out = 0; out < nOfOutputs; out++) {
 			double val = biases[out];
@@ -56,8 +55,8 @@ void LinearLayer::forward(vector<vector<double>>& input) {
 	}
 }
 
-void LinearLayer::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
-	int batchSize = nextDiff.size();
+void LinearLayer::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff,
+	int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int out = 0; out < nOfOutputs; out++) {
 			biasesDiff[out] += nextDiff[b][out];
@@ -121,8 +120,7 @@ ReLU1d::ReLU1d(int d, int batchSize, int l) {
 	}
 }
 
-void ReLU1d::forward(vector<vector<double>>& input) {
-	int batchSize = input.size();
+void ReLU1d::forward(vector<vector<double>>& input, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
 			if (input[b][i] >= 0) {
@@ -135,8 +133,8 @@ void ReLU1d::forward(vector<vector<double>>& input) {
 	}
 }
 
-void ReLU1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
-	int batchSize = nextDiff.size();
+void ReLU1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, 
+	int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
 			if (input[b][i] >= 0) {
@@ -163,8 +161,7 @@ Sigmoid1d::Sigmoid1d(int d, int batchSize) {
 	}
 }
 
-void Sigmoid1d::forward(vector<vector<double>>& input) {
-	int batchSize = input.size();
+void Sigmoid1d::forward(vector<vector<double>>& input, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
 			output[b][i] = f(input[b][i]);
@@ -172,8 +169,8 @@ void Sigmoid1d::forward(vector<vector<double>>& input) {
 	}
 }
 
-void Sigmoid1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
-	int batchSize = nextDiff.size();
+void Sigmoid1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, 
+	int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
 			diff[b][i] = nextDiff[b][i] * f(input[b][i]) * (1 - f(input[b][i]));
@@ -206,8 +203,7 @@ ReLU3d::ReLU3d(int d1, int d2, int d3, int batchSize, int l) {
 	}
 }
 
-void ReLU3d::forward(vector<vector<vector<vector<double>>>>& input) {
-	int batchSize = input.size();
+void ReLU3d::forward(vector<vector<vector<vector<double>>>>& input, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i1 = 0; i1 < d1; i1++) {
 			for (int i2 = 0; i2 < d2; i2++) {
@@ -225,8 +221,7 @@ void ReLU3d::forward(vector<vector<vector<vector<double>>>>& input) {
 }
 
 void ReLU3d::backward(vector<vector<vector<vector<double>>>>& input,
-	vector<vector<vector<vector<double>>>>& nextDiff) {
-	int batchSize = input.size();
+	vector<vector<vector<vector<double>>>>& nextDiff, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i1 = 0; i1 < d1; i1++) {
 			for (int i2 = 0; i2 < d2; i2++) {
@@ -296,8 +291,7 @@ ConvolutionalLayer::ConvolutionalLayer(int rows, int cols, int inputChannels, in
 	}
 }
 
-void ConvolutionalLayer::forward(vector<vector<vector<vector<double>>>>& input) {
-	int batchSize = input.size();
+void ConvolutionalLayer::forward(vector<vector<vector<vector<double>>>>& input, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int out = 0; out < outputChannels; out++) {
 			for (int r2 = 0; r2 < rows; r2++) {
@@ -323,8 +317,7 @@ void ConvolutionalLayer::forward(vector<vector<vector<vector<double>>>>& input) 
 }
 
 void ConvolutionalLayer::backward(vector<vector<vector<vector<double>>>>& input,
-	vector<vector<vector<vector<double>>>>& nextDiff) {
-	int batchSize = input.size();
+	vector<vector<vector<vector<double>>>>& nextDiff, int batchSize) {
 
 	for (int b = 0; b < batchSize; b++) {
 		for (int in = 0; in < inputChannels; in++) {
@@ -430,8 +423,7 @@ Flatten31::Flatten31(int d1, int d2, int d3, int batchSize) {
 	}
 }
 
-void Flatten31::forward(vector<vector<vector<vector<double>>>>& input) {
-	int batchSize = input.size();
+void Flatten31::forward(vector<vector<vector<vector<double>>>>& input, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		int i = 0;
 		for (int i1 = 0; i1 < d1; i1++) {
@@ -446,8 +438,7 @@ void Flatten31::forward(vector<vector<vector<vector<double>>>>& input) {
 }
 
 void Flatten31::backward(vector<vector<vector<vector<double>>>>& input,
-	vector<vector<double>>& nextDiff) {
-	int batchSize = nextDiff.size();
+	vector<vector<double>>& nextDiff, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		int i = 0;
 		for (int i1 = 0; i1 < d1; i1++) {
@@ -493,8 +484,7 @@ MaxPooling::MaxPooling(int channels, int inputRows, int inputCols, int batchSize
 	}
 }
 
-void MaxPooling::forward(vector<vector<vector<vector<double>>>>& input) {
-	int batchSize = input.size();
+void MaxPooling::forward(vector<vector<vector<vector<double>>>>& input, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int channel = 0; channel < channels; channel++) {
 			for (int r = 0; r < outputRows; r++) {
@@ -519,8 +509,7 @@ void MaxPooling::forward(vector<vector<vector<vector<double>>>>& input) {
 }
 
 void MaxPooling::backward(vector<vector<vector<vector<double>>>>& input,
-	vector<vector<vector<vector<double>>>>& nextDiff) {
-	int batchSize = nextDiff.size();
+	vector<vector<vector<vector<double>>>>& nextDiff, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int channel = 0; channel < channels; channel++) {
 			for (int r = 0; r < inputRows; r++) {
@@ -557,8 +546,7 @@ Softmax::Softmax(int d, int batchSize) {
 	exponents.resize(d);
 }
 
-void Softmax::forward(vector<vector<double>>& input) {
-	int batchSize = input.size();
+void Softmax::forward(vector<vector<double>>& input, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		double sumOfExponents = 0;
 		for (int i = 0; i < d; i++) {
@@ -570,8 +558,8 @@ void Softmax::forward(vector<vector<double>>& input) {
 	}
 }
 
-void Softmax::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
-	int batchSize = nextDiff.size();
+void Softmax::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, 
+	int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		double sumOfExponents = 0;
 		for (int i = 0; i < d; i++) {
@@ -608,8 +596,7 @@ Dropout1d::Dropout1d(int d, int batchSize, double p) {
 	}
 }
 
-void Dropout1d::forward(vector<vector<double>>& input, bool training) {
-	int batchSize = input.size();
+void Dropout1d::forward(vector<vector<double>>& input, int batchSize, bool training) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
 			mask[b][i] = 1;
@@ -628,8 +615,8 @@ void Dropout1d::forward(vector<vector<double>>& input, bool training) {
 	}
 }
 
-void Dropout1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff) {
-	int batchSize = input.size();
+void Dropout1d::backward(vector<vector<double>>& input, vector<vector<double>>& nextDiff, 
+	int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i = 0; i < d; i++) {
 			diff[b][i] = nextDiff[b][i] * mask[b][i] * (1.0 / (1.0 - p));
@@ -665,8 +652,8 @@ Dropout3d::Dropout3d(int d1, int d2, int d3, int batchSize, double p) {
 	}
 }
 
-void Dropout3d::forward(vector<vector<vector<vector<double>>>>& input, bool training) {
-	int batchSize = input.size();
+void Dropout3d::forward(vector<vector<vector<vector<double>>>>& input, int batchSize, 
+	bool training) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i1 = 0; i1 < d1; i1++) {
 			for (int i2 = 0; i2 < d2; i2++) {
@@ -690,8 +677,7 @@ void Dropout3d::forward(vector<vector<vector<vector<double>>>>& input, bool trai
 }
 
 void Dropout3d::backward(vector<vector<vector<vector<double>>>>& input,
-	vector<vector<vector<vector<double>>>>& nextDiff) {
-	int batchSize = input.size();
+	vector<vector<vector<vector<double>>>>& nextDiff, int batchSize) {
 	for (int b = 0; b < batchSize; b++) {
 		for (int i1 = 0; i1 < d1; i1++) {
 			for (int i2 = 0; i2 < d2; i2++) {
@@ -735,8 +721,7 @@ BatchNormalization1d::BatchNormalization1d(int d, int batchSize) {
 	}
 }
 
-void BatchNormalization1d::forward(vector<vector<double>>& input, bool training) {
-	int batchSize = input.size();
+void BatchNormalization1d::forward(vector<vector<double>>& input, int batchSize, bool training) {
 	if (training) {
 		for (int i = 0; i < d; i++) {
 			double summ = 0, sumOfSquares = 0;
@@ -765,8 +750,7 @@ void BatchNormalization1d::forward(vector<vector<double>>& input, bool training)
 }
 
 void BatchNormalization1d::backward(vector<vector<double>>& input,
-	vector<vector<double>>& nextDiff) {
-	int batchSize = input.size();
+	vector<vector<double>>& nextDiff, int batchSize) {
 
 	for (int i = 0; i < d; i++) {
 		muLearnDiff[i] = 0;
@@ -877,9 +861,8 @@ BatchNormalization3d::BatchNormalization3d(int d1, int d2, int d3, int batchSize
 	}
 }
 
-void BatchNormalization3d::forward(vector<vector<vector<vector<double>>>>& input, 
+void BatchNormalization3d::forward(vector<vector<vector<vector<double>>>>& input, int batchSize,
 	bool training) {
-	int batchSize = input.size();
 	if (training) {
 		for (int i1 = 0; i1 < d1; i1++) {
 			for (int i2 = 0; i2 < d2; i2++) {
@@ -919,8 +902,7 @@ void BatchNormalization3d::forward(vector<vector<vector<vector<double>>>>& input
 }
 
 void BatchNormalization3d::backward(vector<vector<vector<vector<double>>>>& input,
-	vector<vector<vector<vector<double>>>>& nextDiff) {
-	int batchSize = nextDiff.size();
+	vector<vector<vector<vector<double>>>>& nextDiff, int batchSize) {
 
 	for (int i1 = 0; i1 < d1; i1++) {
 		for (int i2 = 0; i2 < d2; i2++) {

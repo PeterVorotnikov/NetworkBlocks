@@ -19,7 +19,7 @@ private:
 	bool useNormalization = true;
 	int kernelSize = 5;
 	double alpha = 0.003, beta1 = 0.9, beta2 = 0.99;
-	double l2 = 0.1;
+	double l2 = 0.2;
 	int flattenSize = convChannels[1] * (imageSize[1] / poolingSize / poolingSize) *
 		(imageSize[2] / poolingSize / poolingSize);
 	int nOfOutputs = 10;
@@ -80,80 +80,81 @@ private:
 
 public:
 	void forward(vector<vector<vector<vector<double>>>>& images, bool training) {
-		conv1.forward(images);
+		int batchSize = images.size();
+		conv1.forward(images, batchSize);
 		if (useNormalization) {
-			norm1.forward(conv1.output, training);
-			a1.forward(norm1.output);
+			norm1.forward(conv1.output, batchSize, training);
+			a1.forward(norm1.output, batchSize);
 		}
 		else {
-			a1.forward(conv1.output);
+			a1.forward(conv1.output, batchSize);
 		}
-		pool1.forward(a1.output);
-		conv2.forward(pool1.output);
+		pool1.forward(a1.output, batchSize);
+		conv2.forward(pool1.output, batchSize);
 		if (useNormalization) {
-			norm2.forward(conv2.output, training);
-			a2.forward(norm2.output);
+			norm2.forward(conv2.output, batchSize, training);
+			a2.forward(norm2.output, batchSize);
 		}
 		else {
-			a2.forward(conv2.output);
+			a2.forward(conv2.output, batchSize);
 		}
-		pool2.forward(a2.output);
-		flatten.forward(pool2.output);
+		pool2.forward(a2.output, batchSize);
+		flatten.forward(pool2.output, batchSize);
 		if (useNormalization) {
-			norm3.forward(flatten.output);
-			drop1.forward(norm3.output);
+			norm3.forward(flatten.output, batchSize, training);
+			drop1.forward(norm3.output, batchSize, training);
 		}
 		else {
-			drop1.forward(flatten.output, training);
+			drop1.forward(flatten.output, batchSize, training);
 		}
-		linear1.forward(drop1.output);
-		a3.forward(linear1.output);
-		drop2.forward(a3.output, training);
-		linear2.forward(drop2.output);
-		a4.forward(linear2.output);
-		linear3.forward(a4.output);
+		linear1.forward(drop1.output, batchSize);
+		a3.forward(linear1.output, batchSize);
+		drop2.forward(a3.output, batchSize, training);
+		linear2.forward(drop2.output, batchSize);
+		a4.forward(linear2.output, batchSize);
+		linear3.forward(a4.output, batchSize);
 
-		softmax.forward(linear3.output);
+		softmax.forward(linear3.output, batchSize);
 		output = softmax.output;
 	}
 	void backward(vector<vector<vector<vector<double>>>>& images, vector<int>& targets) {
 		loss.calculate(linear3.output, targets);
 		lossValue = loss.value;
 
-		linear3.backward(a4.output, loss.diff);
-		a4.backward(linear2.output, linear3.diff);
-		linear2.backward(drop2.output, a4.diff);
-		drop2.backward(a3.output, linear2.diff);
-		a3.backward(linear1.output, drop2.diff);
-		linear1.backward(drop1.output, a3.diff);
+		linear3.backward(a4.output, loss.diff, batchSize);
+		a4.backward(linear2.output, linear3.diff, batchSize);
+		linear2.backward(drop2.output, a4.diff, batchSize);
+		drop2.backward(a3.output, linear2.diff, batchSize);
+		a3.backward(linear1.output, drop2.diff, batchSize);
+		linear1.backward(drop1.output, a3.diff, batchSize);
 		if (useNormalization) {
-			drop1.backward(norm3.output, linear1.diff);
-			norm3.backward(flatten.output, drop1.diff);
-			flatten.backward(pool2.output, norm3.diff);
+			drop1.backward(norm3.output, linear1.diff, batchSize);
+			norm3.backward(flatten.output, drop1.diff, batchSize);
+			flatten.backward(pool2.output, norm3.diff, batchSize);
 		}
 		else {
-			drop1.backward(flatten.output, linear1.diff);
-			flatten.backward(pool2.output, drop1.diff);
+			drop1.backward(flatten.output, linear1.diff, batchSize);
+			flatten.backward(pool2.output, drop1.diff, batchSize);
 		}
-		pool2.backward(a2.output, flatten.diff);
+		pool2.backward(a2.output, flatten.diff, batchSize);
 		if (useNormalization) {
-			a2.backward(norm2.output, pool2.diff);
-			norm2.backward(conv2.output, a2.diff);
-			conv2.backward(pool1.output, norm2.diff);
+			a2.backward(norm2.output, pool2.diff, batchSize);
+			norm2.backward(conv2.output, a2.diff, batchSize);
+			conv2.backward(pool1.output, norm2.diff, batchSize);
 		}
 		else {
-			a2.backward(conv2.output, pool2.diff);
-			conv2.backward(pool1.output, a2.diff);
+			a2.backward(conv2.output, pool2.diff, batchSize);
+			conv2.backward(pool1.output, a2.diff, batchSize);
 		}
-		pool1.backward(a1.output, conv2.diff);
+		pool1.backward(a1.output, conv2.diff, batchSize);
 		if (useNormalization) {
-			a1.backward(norm1.output, pool1.diff);
-			norm1.backward(conv1.output, a1.diff);
-			conv1.backward(images, norm1.diff);
+			a1.backward(norm1.output, pool1.diff, batchSize);
+			norm1.backward(conv1.output, a1.diff, batchSize);
+			conv1.backward(images, norm1.diff, batchSize);
 		}
 		else {
-			a1.backward(conv1.output, pool1.diff);
-			conv1.backward(images, a1.diff);
+			a1.backward(conv1.output, pool1.diff, batchSize);
+			conv1.backward(images, a1.diff, batchSize);
 		}
 		
 	}

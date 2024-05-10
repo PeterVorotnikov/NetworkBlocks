@@ -34,7 +34,7 @@ CategoricalCrossentropyLoss::CategoricalCrossentropyLoss(int n, int batchSize) {
 
 void CategoricalCrossentropyLoss::calculate(vector<vector<double>>& output, 
 	vector<int>& target) {
-	int batchSize = output.size();
+	int batchSize = target.size();
 	value = 0;
 	for (int b = 0; b < batchSize; b++) {
 		double sumOfExponent = 0;
