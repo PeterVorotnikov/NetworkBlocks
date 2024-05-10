@@ -9,16 +9,17 @@
 class CNN
 {
 private:
-	int batchSize = 2;
+	int batchSize = 3;
 	vector<int> imageSize = { 1, 28, 28 };
 	vector<int> convChannels = { 6, 16 };
 	int poolingSize = 2;
 	vector<int> fullLayersSize = { 80, 60 };
 	double reluParameter = 0.001;
 	double dropoutParameter = 0.5;
+	bool useNormalization = true;
 	int kernelSize = 5;
-	double alpha = 0.01, beta1 = 0.9, beta2 = 0.99;
-	double l2 = 0;
+	double alpha = 0.003, beta1 = 0.9, beta2 = 0.99;
+	double l2 = 0.1;
 	int flattenSize = convChannels[1] * (imageSize[1] / poolingSize / poolingSize) *
 		(imageSize[2] / poolingSize / poolingSize);
 	int nOfOutputs = 10;
@@ -40,13 +41,13 @@ private:
 		imageSize[2] / poolingSize, batchSize, poolingSize);
 	Flatten31 flatten = Flatten31(convChannels[1], imageSize[1] / poolingSize / poolingSize, 
 		imageSize[2] / poolingSize / poolingSize, batchSize);
+	BatchNormalization1d norm3 = BatchNormalization1d(flattenSize, batchSize);
 	Dropout1d drop1 = Dropout1d(flattenSize, batchSize, dropoutParameter);
 	LinearLayer linear1 = LinearLayer(flattenSize, fullLayersSize[0], batchSize);
-	ReLU1d a3 = ReLU1d(fullLayersSize[0], batchSize, reluParameter);
+	Sigmoid1d a3 = Sigmoid1d(fullLayersSize[0], batchSize);
 	Dropout1d drop2 = Dropout1d(fullLayersSize[0], batchSize, dropoutParameter);
 	LinearLayer linear2 = LinearLayer(fullLayersSize[0], fullLayersSize[1], batchSize);
-	Sigmoid1d a4 = Sigmoid1d(fullLayersSize[1], batchSize);
-	Dropout1d drop3 = Dropout1d(fullLayersSize[1], batchSize, dropoutParameter);
+	ReLU1d a4 = ReLU1d(fullLayersSize[1], batchSize, reluParameter);
 	LinearLayer linear3 = LinearLayer(fullLayersSize[1], nOfOutputs, batchSize);
 	Softmax softmax = Softmax(nOfOutputs, batchSize);
 	CategoricalCrossentropyLoss loss = CategoricalCrossentropyLoss(nOfOutputs, batchSize);
@@ -64,7 +65,9 @@ private:
 	Adam3d norm2g = Adam3d(convChannels[1], imageSize[1] / 2, imageSize[2] / 2,
 		alpha, beta1, beta2, 0);
 	Adam3d norm2b = Adam3d(convChannels[1], imageSize[1] / 2, imageSize[2] / 2,
-		alpha, beta1, beta2, 0);;
+		alpha, beta1, beta2, 0);
+	Adam1d norm3g = Adam1d(flattenSize, alpha, beta1, beta2, 0);
+	Adam1d norm3b = Adam1d(flattenSize, alpha, beta1, beta2, 0);
 	Adam2d linear1w = Adam2d(flattenSize, fullLayersSize[0], alpha, beta1, beta2, l2);
 	Adam1d linear1b = Adam1d(fullLayersSize[0], alpha, beta1, beta2, 0);
 	Adam2d linear2w = Adam2d(fullLayersSize[0], fullLayersSize[1], alpha, beta1, beta2, l2);
@@ -78,22 +81,37 @@ private:
 public:
 	void forward(vector<vector<vector<vector<double>>>>& images, bool training) {
 		conv1.forward(images);
-		norm1.forward(conv1.output, training);
-		a1.forward(norm1.output);
+		if (useNormalization) {
+			norm1.forward(conv1.output, training);
+			a1.forward(norm1.output);
+		}
+		else {
+			a1.forward(conv1.output);
+		}
 		pool1.forward(a1.output);
 		conv2.forward(pool1.output);
-		norm2.forward(conv2.output, training);
-		a2.forward(norm2.output);
+		if (useNormalization) {
+			norm2.forward(conv2.output, training);
+			a2.forward(norm2.output);
+		}
+		else {
+			a2.forward(conv2.output);
+		}
 		pool2.forward(a2.output);
 		flatten.forward(pool2.output);
-		drop1.forward(flatten.output, training);
+		if (useNormalization) {
+			norm3.forward(flatten.output);
+			drop1.forward(norm3.output);
+		}
+		else {
+			drop1.forward(flatten.output, training);
+		}
 		linear1.forward(drop1.output);
 		a3.forward(linear1.output);
 		drop2.forward(a3.output, training);
 		linear2.forward(drop2.output);
 		a4.forward(linear2.output);
-		drop3.forward(a4.output);
-		linear3.forward(drop3.output);
+		linear3.forward(a4.output);
 
 		softmax.forward(linear3.output);
 		output = softmax.output;
@@ -102,44 +120,68 @@ public:
 		loss.calculate(linear3.output, targets);
 		lossValue = loss.value;
 
-		linear3.backward(drop3.output, loss.diff);
-		drop3.backward(a4.output, linear3.diff);
-		a4.backward(linear2.output, drop3.diff);
+		linear3.backward(a4.output, loss.diff);
+		a4.backward(linear2.output, linear3.diff);
 		linear2.backward(drop2.output, a4.diff);
-		drop2.backward(a3.output, linear1.diff);
+		drop2.backward(a3.output, linear2.diff);
 		a3.backward(linear1.output, drop2.diff);
 		linear1.backward(drop1.output, a3.diff);
-		drop1.backward(flatten.output, linear1.diff);
-		flatten.backward(pool2.output, drop1.diff);
+		if (useNormalization) {
+			drop1.backward(norm3.output, linear1.diff);
+			norm3.backward(flatten.output, drop1.diff);
+			flatten.backward(pool2.output, norm3.diff);
+		}
+		else {
+			drop1.backward(flatten.output, linear1.diff);
+			flatten.backward(pool2.output, drop1.diff);
+		}
 		pool2.backward(a2.output, flatten.diff);
-		a2.backward(norm2.output, pool2.diff);
-		norm2.backward(conv2.output, a2.diff);
-		conv2.backward(pool1.output, norm2.diff);
+		if (useNormalization) {
+			a2.backward(norm2.output, pool2.diff);
+			norm2.backward(conv2.output, a2.diff);
+			conv2.backward(pool1.output, norm2.diff);
+		}
+		else {
+			a2.backward(conv2.output, pool2.diff);
+			conv2.backward(pool1.output, a2.diff);
+		}
 		pool1.backward(a1.output, conv2.diff);
-		a1.backward(norm1.output, pool1.diff);
-		norm1.backward(conv1.output, a1.diff);
-		conv1.backward(images, norm1.diff);
+		if (useNormalization) {
+			a1.backward(norm1.output, pool1.diff);
+			norm1.backward(conv1.output, a1.diff);
+			conv1.backward(images, norm1.diff);
+		}
+		else {
+			a1.backward(conv1.output, pool1.diff);
+			conv1.backward(images, a1.diff);
+		}
+		
 	}
 	void updateParameters() {
 		conv1w.step(conv1.weights, conv1.weightsDiff);
 		conv1b.step(conv1.biases, conv1.biasesDiff);
-		norm1g.step(norm1.gamma, norm1.gammaDiff);
-		norm1b.step(norm1.beta, norm1.betaDiff);
 		conv2w.step(conv2.weights, conv2.weightsDiff);
 		conv2b.step(conv2.biases, conv2.biasesDiff);
-		norm2g.step(norm2.gamma, norm2.gammaDiff);
-		norm2b.step(norm2.beta, norm2.betaDiff);
 		linear1w.step(linear1.weights, linear1.weightsDiff);
 		linear1b.step(linear1.biases, linear1.biasesDiff);
 		linear2w.step(linear2.weights, linear2.weightsDiff);
 		linear2b.step(linear2.biases, linear2.biasesDiff);
 		linear3w.step(linear3.weights, linear3.weightsDiff);
 		linear3b.step(linear3.biases, linear3.biasesDiff);
+		if (useNormalization) {
+			norm1g.step(norm1.gamma, norm1.gammaDiff);
+			norm1b.step(norm1.beta, norm1.betaDiff);
+			norm2g.step(norm2.gamma, norm2.gammaDiff);
+			norm2b.step(norm2.beta, norm2.betaDiff);
+			norm3g.step(norm3.gamma, norm3.gammaDiff);
+			norm3b.step(norm3.beta, norm3.betaDiff);
+			norm1.zeroGradients();
+			norm2.zeroGradients();
+			norm3.zeroGradients();
+		}
 
 		conv1.zeroGradients();
-		norm1.zeroGradients();
 		conv2.zeroGradients();
-		norm2.zeroGradients();
 		linear1.zeroGradients();
 		linear2.zeroGradients();
 		linear3.zeroGradients();

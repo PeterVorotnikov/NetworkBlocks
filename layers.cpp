@@ -32,7 +32,7 @@ void LinearLayer::initWeights() {
 		weightsDiff[i].resize(nOfOutputs);
 		for (int j = 0; j < nOfOutputs; j++) {
 			double r = (double)rand() / (double)RAND_MAX;
-			r = r * (2.0 / (double)nOfInputs) - 1.0 / (double)nOfInputs;
+			r = 2.0 * r - 1.0;
 			weights[i][j] = r;
 		}
 	}
@@ -288,8 +288,7 @@ ConvolutionalLayer::ConvolutionalLayer(int rows, int cols, int inputChannels, in
 				weightsDiff[outChannel][inChannel][i].resize(kernelSize);
 				for (int j = 0; j < kernelSize; j++) {
 					double r = (double)rand() / (double)RAND_MAX;
-					r *= 2.0 / (double)(inputChannels * kernelSize * kernelSize);
-					r -= 1.0 / (double)(inputChannels * kernelSize * kernelSize);
+					r = 2.0 * r - 1.0;
 					weights[outChannel][inChannel][i][j] = r;
 				}
 			}

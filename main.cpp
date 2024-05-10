@@ -11,17 +11,17 @@ typedef vector<vector<vector<vector<double>>>> v4;
 typedef vector<vector<vector<vector<vector<double>>>>> v5;
 
 int main() {
-	cout.precision(5);
+	cout.precision(8);
 
 	CNN cnn;
 
-	int batchSize = 2;
+	int batchSize = 3;
 
 	v4 images(batchSize, v3(1, v2(28, v(28, 0.5))));
 	for (int b = 0; b < batchSize; b++) {
 		for (int r = 0; r < 28; r++) {
 			for (int c = 0; c < 28; c++) {
-				images[b][0][r][c] = (double)rand() / (double)RAND_MAX;
+				images[b][0][r][c] = pow((double)rand() / (double)RAND_MAX, 2);
 			}
 		}
 	}
@@ -39,11 +39,14 @@ int main() {
 		cnn.updateParameters();
 		cout << "e = " << e + 1 << endl;
 		cout << "loss = " << loss << endl;
-		cout << "target = " << targets[1] << endl;
 		cnn.forward(images, false);
 		vector<vector<double>> outputs = cnn.getOutputs();
-		for (int i = 0; i < 10; i++) {
-			cout << outputs[1][i] << " ";
+		for (int b = 0; b < batchSize; b++) {
+			cout << "target = " << targets[b] << endl;
+			for (int i = 0; i < 10; i++) {
+				cout << outputs[b][i] << " ";
+			}
+			cout << endl;
 		}
 		cout << "\n\n";
 	}
