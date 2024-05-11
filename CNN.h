@@ -9,48 +9,48 @@
 class CNN
 {
 private:
-	int batchSize = 3;
+	int maxBatchSize = 100;
 	vector<int> imageSize = { 1, 28, 28 };
 	vector<int> convChannels = { 6, 16 };
 	int poolingSize = 2;
 	vector<int> fullLayersSize = { 80, 60 };
 	double reluParameter = 0.001;
-	double dropoutParameter = 0.5;
+	double dropoutParameter = 0.3;
 	bool useNormalization = true;
 	int kernelSize = 5;
 	double alpha = 0.003, beta1 = 0.9, beta2 = 0.99;
-	double l2 = 0.2;
+	double l2 = 0.1;
 	int flattenSize = convChannels[1] * (imageSize[1] / poolingSize / poolingSize) *
 		(imageSize[2] / poolingSize / poolingSize);
 	int nOfOutputs = 10;
 
 	ConvolutionalLayer conv1 = ConvolutionalLayer(imageSize[1], imageSize[2], imageSize[0], 
-		convChannels[0], batchSize, kernelSize);
+		convChannels[0], maxBatchSize, kernelSize);
 	BatchNormalization3d norm1 = BatchNormalization3d(convChannels[0], imageSize[1],
-		imageSize[2], batchSize);
-	ReLU3d a1 = ReLU3d(convChannels[0], imageSize[1], imageSize[2], batchSize, reluParameter);
-	MaxPooling pool1 = MaxPooling(convChannels[0], imageSize[1], imageSize[2], batchSize, 
+		imageSize[2], maxBatchSize);
+	ReLU3d a1 = ReLU3d(convChannels[0], imageSize[1], imageSize[2], maxBatchSize, reluParameter);
+	MaxPooling pool1 = MaxPooling(convChannels[0], imageSize[1], imageSize[2], maxBatchSize, 
 		poolingSize);
 	ConvolutionalLayer conv2 = ConvolutionalLayer(imageSize[1] / poolingSize, 
-		imageSize[2] / poolingSize, convChannels[0], convChannels[1], batchSize, kernelSize);
+		imageSize[2] / poolingSize, convChannels[0], convChannels[1], maxBatchSize, kernelSize);
 	BatchNormalization3d norm2 = BatchNormalization3d(convChannels[1], 
-		imageSize[1] / poolingSize, imageSize[2] / poolingSize, batchSize);
+		imageSize[1] / poolingSize, imageSize[2] / poolingSize, maxBatchSize);
 	ReLU3d a2 = ReLU3d(convChannels[1],
-		imageSize[1] / poolingSize, imageSize[2] / poolingSize, batchSize, reluParameter);
+		imageSize[1] / poolingSize, imageSize[2] / poolingSize, maxBatchSize, reluParameter);
 	MaxPooling pool2 = MaxPooling(convChannels[1], imageSize[1] / poolingSize, 
-		imageSize[2] / poolingSize, batchSize, poolingSize);
+		imageSize[2] / poolingSize, maxBatchSize, poolingSize);
 	Flatten31 flatten = Flatten31(convChannels[1], imageSize[1] / poolingSize / poolingSize, 
-		imageSize[2] / poolingSize / poolingSize, batchSize);
-	BatchNormalization1d norm3 = BatchNormalization1d(flattenSize, batchSize);
-	Dropout1d drop1 = Dropout1d(flattenSize, batchSize, dropoutParameter);
-	LinearLayer linear1 = LinearLayer(flattenSize, fullLayersSize[0], batchSize);
-	Sigmoid1d a3 = Sigmoid1d(fullLayersSize[0], batchSize);
-	Dropout1d drop2 = Dropout1d(fullLayersSize[0], batchSize, dropoutParameter);
-	LinearLayer linear2 = LinearLayer(fullLayersSize[0], fullLayersSize[1], batchSize);
-	ReLU1d a4 = ReLU1d(fullLayersSize[1], batchSize, reluParameter);
-	LinearLayer linear3 = LinearLayer(fullLayersSize[1], nOfOutputs, batchSize);
-	Softmax softmax = Softmax(nOfOutputs, batchSize);
-	CategoricalCrossentropyLoss loss = CategoricalCrossentropyLoss(nOfOutputs, batchSize);
+		imageSize[2] / poolingSize / poolingSize, maxBatchSize);
+	BatchNormalization1d norm3 = BatchNormalization1d(flattenSize, maxBatchSize);
+	Dropout1d drop1 = Dropout1d(flattenSize, maxBatchSize, dropoutParameter);
+	LinearLayer linear1 = LinearLayer(flattenSize, fullLayersSize[0], maxBatchSize);
+	Sigmoid1d a3 = Sigmoid1d(fullLayersSize[0], maxBatchSize);
+	Dropout1d drop2 = Dropout1d(fullLayersSize[0], maxBatchSize, dropoutParameter);
+	LinearLayer linear2 = LinearLayer(fullLayersSize[0], fullLayersSize[1], maxBatchSize);
+	ReLU1d a4 = ReLU1d(fullLayersSize[1], maxBatchSize, reluParameter);
+	LinearLayer linear3 = LinearLayer(fullLayersSize[1], nOfOutputs, maxBatchSize);
+	Softmax softmax = Softmax(nOfOutputs, maxBatchSize);
+	CategoricalCrossentropyLoss loss = CategoricalCrossentropyLoss(nOfOutputs, maxBatchSize);
 
 	Adam4d conv1w = Adam4d(convChannels[0], imageSize[0], kernelSize, kernelSize, 
 		alpha, beta1, beta2, l2);
@@ -79,8 +79,7 @@ private:
 	vector<vector<double>> output;
 
 public:
-	void forward(vector<vector<vector<vector<double>>>>& images, bool training) {
-		int batchSize = images.size();
+	void forward(vector<vector<vector<vector<double>>>>& images, int batchSize, bool training) {
 		conv1.forward(images, batchSize);
 		if (useNormalization) {
 			norm1.forward(conv1.output, batchSize, training);
@@ -117,7 +116,8 @@ public:
 		softmax.forward(linear3.output, batchSize);
 		output = softmax.output;
 	}
-	void backward(vector<vector<vector<vector<double>>>>& images, vector<int>& targets) {
+	void backward(vector<vector<vector<vector<double>>>>& images,
+		vector<int>& targets, int batchSize) {
 		loss.calculate(linear3.output, targets);
 		lossValue = loss.value;
 

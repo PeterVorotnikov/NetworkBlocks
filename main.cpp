@@ -1,6 +1,10 @@
 #include <iostream>
+#include <string>
 #include <iomanip>
+#include <filesystem>
 #include "CNN.h"
+
+using namespace std;
 
 
 
@@ -11,44 +15,85 @@ typedef vector<vector<vector<vector<double>>>> v4;
 typedef vector<vector<vector<vector<vector<double>>>>> v5;
 
 int main() {
+	srand(1);
+
 	cout.precision(8);
+
+	string trainFolderName = "train/";
+	string testFolderName = "test/";
+	string saveFolderName = "models/";
+
+	int nOfTrainSamples = 60000;
+	int nOfTestSamples = 10000;
+
+	int nOfClasses = 10;
+
+	vector<int> imageSize = { 1, 28, 28 };
+
+	int batchSize = 100;
+
+	vector<int> batchesOrder(nOfTrainSamples);
+
+	int epochs = 10;
 
 	CNN cnn;
 
-	int batchSize = 3;
-
-	v4 images(batchSize, v3(1, v2(28, v(28, 0.5))));
-	for (int b = 0; b < batchSize; b++) {
-		for (int r = 0; r < 28; r++) {
-			for (int c = 0; c < 28; c++) {
-				images[b][0][r][c] = pow((double)rand() / (double)RAND_MAX, 2);
-			}
-		}
-	}
+	v4 input(batchSize, v3(imageSize[0], v2(imageSize[1], v(imageSize[2]))));
 	vector<int> targets(batchSize);
-	for (int i = 0; i < batchSize; i++) {
-		targets[i] = rand() % 10;
-	}
 
-	
+	for (int e = 1; e <= epochs; e++) {
 
-	for (int e = 0; e < 1000; e++) {
-		cnn.forward(images, true);
-		cnn.backward(images, targets);
-		double loss = cnn.getLoss();
-		cnn.updateParameters();
-		cout << "e = " << e + 1 << endl;
-		cout << "loss = " << loss << endl;
-		cnn.forward(images, false);
-		vector<vector<double>> outputs = cnn.getOutputs();
-		for (int b = 0; b < batchSize; b++) {
-			cout << "target = " << targets[b] << endl;
-			for (int i = 0; i < 10; i++) {
-				cout << outputs[b][i] << " ";
-			}
-			cout << endl;
+		for (int i = 0; i < nOfTrainSamples; i++) {
+			batchesOrder[i] = i;
 		}
-		cout << "\n\n";
+		for (int i = 0; i < nOfTrainSamples; i++) {
+			int k = rand() % (nOfTrainSamples - i);
+			swap(batchesOrder[i], batchesOrder[i + k]);
+		}
+
+		int count = 0;
+
+		for (int leftIndex = 0; leftIndex < nOfTrainSamples; leftIndex += batchSize) {
+			int rightIndex = min(leftIndex + batchSize, nOfTrainSamples);
+			int size = rightIndex - leftIndex;
+
+			for (int sampleIndex = leftIndex; sampleIndex < rightIndex; sampleIndex++) {
+				string fileName = to_string(batchesOrder[sampleIndex]) + ".txt";
+
+				ifstream inputFile(trainFolderName + fileName);
+
+				inputFile >> targets[sampleIndex - leftIndex];
+				for (int i = 0; i < imageSize[0]; i++) {
+					for (int j = 0; j < imageSize[1]; j++) {
+						for (int k = 0; k < imageSize[2]; k++) {
+							inputFile >> input[sampleIndex - leftIndex][i][j][k];
+						}
+					}
+				}
+				inputFile.close();
+			}
+
+			cnn.forward(input, size, true);
+			cout << "Epoch " << e << ", batch [" << leftIndex << "; " << rightIndex << "), " <<
+				"loss = " << cnn.getLoss();
+			vector<vector<double>> output = cnn.getOutputs();
+			for (int i = 0; i < size; i++) {
+				if (output[i][targets[i]] > 0.5) {
+					count++;
+				}
+			}
+			cout << ", accuracy = " << (double)count / (double)rightIndex << endl;
+
+			cnn.backward(input, targets, size);
+			cnn.updateParameters();
+
+			if (leftIndex % 1000 == 0) {
+				string folderName = "model" + to_string(e) + "-" + to_string(leftIndex);
+				filesystem::create_directory(saveFolderName + folderName);
+				cnn.save(saveFolderName + folderName + "/");
+			}
+ 		}
+
 	}
 
 	return 0;
